@@ -1,0 +1,14 @@
+{
+  "name": "Test Document",
+  "type": "test",
+  "created": "2025-10-17 14:07:33",
+  "data": [
+    "item1",
+    "item2",
+    "item3"
+  ],
+  "metadata": {
+    "version": "1.0",
+    "author": "Test Script"
+  }
+}
