@@ -28,18 +28,56 @@ This directory contains all test scripts for the Azure Functions File Upload Ser
 ### 📊 **Chunk Analysis Tests**
 - `test_chunk_comparison.py` - Database functions for capturing and comparing document chunks
 - `test_chunk_comparison_integration.py` - Integrated chunk comparison with multiple chunking methods
+- `test_chunking_config.py` - Chunking configuration and method testing
+
+### 🔍 **Search and Content Tests**
+- `test_azure_search_content.py` - Azure Search content access and retrieval tests
+- `test_search_chunks_content.py` - Search chunk content validation tests
+- `test_paragraph_persistence.py` - Paragraph data persistence and retrieval tests
+
+### 🗑️ **Reset and Management Tests**
+- `test_reset_endpoint.py` - Database reset endpoint testing
+- `test_reset_endpoints.py` - Multiple reset endpoints testing
+- `test_reset_with_data.py` - Reset operations with data validation
+
+### 🏗️ **Infrastructure Tests**
+- `test_index_creation.py` - Azure Search index creation and management tests
+- `test_document_deletion.py` - Document deletion functionality tests
+
+### 📄 **Document Processing Tests**
+- `test_pdf_methods.py` - PDF processing and extraction method tests
 
 ## Running Tests
 
 ### From Tests Directory
 ```bash
 cd tests
-python test_blob_trigger.py      # Test blob trigger functionality
-python test_ai_processing.py     # Test AI processing directly
-python test_complete_workflow.py # Test complete workflow
-python quick_test.py             # Quick validation
-python test_whole.py --verbose    # Comprehensive system test with detailed output
-python test_whole.py --quick      # Comprehensive test (skip blob trigger)
+
+# Core Functionality Tests
+python test_blob_trigger.py           # Test blob trigger functionality
+python test_ai_processing.py          # Test AI processing directly
+python test_complete_workflow.py      # Test complete workflow
+python quick_test.py                  # Quick validation
+python test_whole.py --verbose        # Comprehensive system test with detailed output
+python test_whole.py --quick          # Comprehensive test (skip blob trigger)
+
+# Search and Content Tests
+python test_azure_search_content.py   # Test Azure Search content access
+python test_search_chunks_content.py  # Test search chunk content validation
+python test_paragraph_persistence.py  # Test paragraph data persistence
+
+# Infrastructure Tests
+python test_index_creation.py         # Test index creation and management
+python test_document_deletion.py      # Test document deletion functionality
+
+# Reset and Management Tests
+python test_reset_endpoint.py         # Test database reset endpoint
+python test_reset_endpoints.py        # Test multiple reset endpoints
+python test_reset_with_data.py        # Test reset operations with data
+
+# Document Processing Tests
+python test_pdf_methods.py            # Test PDF processing methods
+python test_chunking_config.py        # Test chunking configuration
 ```
 
 ### From Root Directory
@@ -48,6 +86,9 @@ python tests/test_blob_trigger.py
 python tests/test_ai_processing.py
 python tests/test_complete_workflow.py
 python tests/quick_test.py
+python tests/test_index_creation.py
+python tests/test_document_deletion.py
+python tests/test_paragraph_persistence.py
 ```
 
 ## Test Descriptions

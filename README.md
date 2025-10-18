@@ -26,21 +26,40 @@ fresh_start/
 ├── local.settings.json    # Development settings
 ├── requirements.txt       # Python dependencies
 ├── function_app.py        # Main application entry
-├── contracts/
+├── run_tests.py           # Test runner script
+├── contracts/             # Core business logic
 │   ├── __init__.py        # Module initialization
 │   ├── config.py          # Configuration management
 │   ├── ai_services.py     # AI processing and OpenAI integration
 │   ├── database.py        # Database operations
 │   ├── storage.py         # Blob storage operations
+│   ├── index_creation.py  # Azure Search index management
+│   ├── chunk_comparison.py# Document chunking comparison
 │   └── models.py          # Data models
-├── tests/                 # Test suite
+├── blob/                  # Blob processing
+│   ├── README.md          # Blob processing documentation
+│   └── blob_processor.py  # Blob processing utilities
+├── deployment/            # Deployment scripts
+│   ├── README.md          # Deployment documentation
+│   └── deploy.ps1         # PowerShell deployment script
+├── docs/                  # Documentation
+│   ├── README.md          # Documentation index
+│   └── *.md               # Guides and references
+├── postman/              # API testing
+│   ├── README.md          # Postman collection documentation
+│   ├── *.postman_collection.json
+│   └── *.postman_environment.json
+├── scripts/              # Utility scripts
+│   ├── README.md          # Scripts documentation
+│   ├── setup.py           # Project setup
+│   ├── check_database.py  # Database validation
+│   └── update_postman_*.py # Postman collection updates
+├── tests/                # Test suite
 │   ├── README.md          # Test documentation
 │   ├── __init__.py
-│   ├── test_*.py          # Unit and integration tests
-│   ├── test_blob_trigger.py     # Blob trigger tests
-│   ├── test_ai_processing.py    # AI processing tests
-│   └── test_complete_workflow.py # End-to-end tests
-└── data/                  # Local data storage
+│   └── test_*.py          # Unit and integration tests
+├── test_files/           # Test data
+└── data/                 # Local data storage
 ```
 
 ## API Endpoints
