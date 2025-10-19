@@ -56,22 +56,106 @@ class Config:
     AZURE_SQL_DRIVER: str = os.getenv('AZURE_SQL_DRIVER', 'ODBC Driver 18 for SQL Server')
     AZURE_SQL_PORT: int = int(os.getenv('AZURE_SQL_PORT', '1433'))
     
-    # Construct connection string from individual components
+    # Azure SQL Authentication Method - priority order configuration
+    AZURE_SQL_AUTH_METHOD: str = os.getenv('AZURE_SQL_AUTH_METHOD', 'auto').lower()
+    # Options: 'managed_identity', 'ad_password', 'ad_integrated', 'sql_auth', 'auto'
+    
+    # Managed Identity Configuration
+    AZURE_SQL_MANAGED_IDENTITY_CLIENT_ID: Optional[str] = os.getenv('AZURE_SQL_MANAGED_IDENTITY_CLIENT_ID')
+    
+    # Construct connection string with enhanced authentication support
     @property
     def AZURE_SQL_CONNECTION_STRING(self) -> Optional[str]:
-        if self.AZURE_SQL_SERVER and self.AZURE_SQL_DATABASE:
-            if self.AZURE_SQL_USERNAME and self.AZURE_SQL_PASSWORD:
-                # Check if username looks like an email (Azure AD)
-                if '@' in self.AZURE_SQL_USERNAME:
-                    # Use Azure AD authentication with username/password
-                    return f"Driver={{{self.AZURE_SQL_DRIVER}}};Server=tcp:{self.AZURE_SQL_SERVER},{self.AZURE_SQL_PORT};Database={self.AZURE_SQL_DATABASE};Authentication=ActiveDirectoryPassword;UID={self.AZURE_SQL_USERNAME};PWD={self.AZURE_SQL_PASSWORD};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
-                else:
-                    # Use SQL Server authentication
-                    return f"Driver={{{self.AZURE_SQL_DRIVER}}};Server=tcp:{self.AZURE_SQL_SERVER},{self.AZURE_SQL_PORT};Database={self.AZURE_SQL_DATABASE};Uid={self.AZURE_SQL_USERNAME};Pwd={self.AZURE_SQL_PASSWORD};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
+        """
+        Generate Azure SQL connection string with multiple authentication methods.
+        
+        Authentication priority when AUTH_METHOD='auto':
+        1. Managed Identity (if running in Azure)
+        2. Azure AD Password (if username/password provided)
+        3. SQL Server Authentication (fallback)
+        
+        Returns connection string or None if configuration is incomplete.
+        """
+        # Return direct connection string if provided
+        direct_conn_str = os.getenv('AZURE_SQL_CONNECTION_STRING')
+        if direct_conn_str:
+            return direct_conn_str
+            
+        # Validate required components
+        if not (self.AZURE_SQL_SERVER and self.AZURE_SQL_DATABASE):
+            return None
+            
+        base_conn = f"Driver={{{self.AZURE_SQL_DRIVER}}};Server=tcp:{self.AZURE_SQL_SERVER},{self.AZURE_SQL_PORT};Database={self.AZURE_SQL_DATABASE};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
+        
+        auth_method = self.AZURE_SQL_AUTH_METHOD
+        
+        if auth_method == 'managed_identity':
+            return self._build_managed_identity_connection(base_conn)
+        elif auth_method == 'ad_password':
+            return self._build_ad_password_connection(base_conn)
+        elif auth_method == 'ad_integrated':
+            return self._build_ad_integrated_connection(base_conn)
+        elif auth_method == 'sql_auth':
+            return self._build_sql_auth_connection(base_conn)
+        elif auth_method == 'auto':
+            return self._build_auto_connection(base_conn)
+        else:
+            raise ValueError(f"Invalid AZURE_SQL_AUTH_METHOD: {auth_method}. Valid options: managed_identity, ad_password, ad_integrated, sql_auth, auto")
+    
+    def _build_managed_identity_connection(self, base_conn: str) -> str:
+        """Build managed identity connection string"""
+        if self.AZURE_SQL_MANAGED_IDENTITY_CLIENT_ID:
+            # User-assigned managed identity
+            return f"{base_conn}Authentication=ActiveDirectoryMsi;UID={self.AZURE_SQL_MANAGED_IDENTITY_CLIENT_ID};"
+        else:
+            # System-assigned managed identity
+            return f"{base_conn}Authentication=ActiveDirectoryMsi;"
+    
+    def _build_ad_password_connection(self, base_conn: str) -> str:
+        """Build Azure AD password connection string"""
+        if not (self.AZURE_SQL_USERNAME and self.AZURE_SQL_PASSWORD):
+            raise ValueError("AZURE_SQL_USERNAME and AZURE_SQL_PASSWORD required for AD password authentication")
+        return f"{base_conn}Authentication=ActiveDirectoryPassword;UID={self.AZURE_SQL_USERNAME};PWD={self.AZURE_SQL_PASSWORD};"
+    
+    def _build_ad_integrated_connection(self, base_conn: str) -> str:
+        """Build Azure AD integrated connection string"""
+        return f"{base_conn}Authentication=ActiveDirectoryIntegrated;"
+    
+    def _build_sql_auth_connection(self, base_conn: str) -> str:
+        """Build SQL Server authentication connection string"""
+        if not (self.AZURE_SQL_USERNAME and self.AZURE_SQL_PASSWORD):
+            raise ValueError("AZURE_SQL_USERNAME and AZURE_SQL_PASSWORD required for SQL Server authentication")
+        return f"{base_conn}Uid={self.AZURE_SQL_USERNAME};Pwd={self.AZURE_SQL_PASSWORD};"
+    
+    def _build_auto_connection(self, base_conn: str) -> str:
+        """Build connection string using automatic authentication method selection"""
+        # Priority 1: Try managed identity (best for Azure-hosted apps)
+        try:
+            # Check if we're running in Azure environment
+            if (os.getenv('WEBSITE_SITE_NAME') or 
+                os.getenv('AZURE_CLIENT_ID') or 
+                os.getenv('MSI_ENDPOINT') or
+                self.AZURE_SQL_MANAGED_IDENTITY_CLIENT_ID):
+                return self._build_managed_identity_connection(base_conn)
+        except:
+            pass
+        
+        # Priority 2: Try Azure AD password authentication
+        if self.AZURE_SQL_USERNAME and self.AZURE_SQL_PASSWORD:
+            if '@' in self.AZURE_SQL_USERNAME:
+                return self._build_ad_password_connection(base_conn)
             else:
-                # Use managed identity
-                return f"Driver={{{self.AZURE_SQL_DRIVER}}};Server=tcp:{self.AZURE_SQL_SERVER},{self.AZURE_SQL_PORT};Database={self.AZURE_SQL_DATABASE};Authentication=ActiveDirectoryMsi;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
-        return os.getenv('AZURE_SQL_CONNECTION_STRING')
+                # SQL Server authentication
+                return self._build_sql_auth_connection(base_conn)
+        
+        # Priority 3: Try Azure AD integrated authentication
+        try:
+            return self._build_ad_integrated_connection(base_conn)
+        except:
+            pass
+        
+        # Fallback: Use managed identity without client ID
+        return f"{base_conn}Authentication=ActiveDirectoryMsi;"
     
     # Application Settings
     MAX_FILE_SIZE_MB: int = int(os.getenv('MAX_FILE_SIZE_MB', '100'))

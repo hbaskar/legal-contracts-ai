@@ -27,11 +27,114 @@ class DatabaseManager:
         self.db_type = config.DATABASE_TYPE
         self.sqlite_path = config.SQLITE_DATABASE_PATH
         self.logger = logging.getLogger(__name__)
+        self._connection_cache = {}
         
     @property
     def azure_sql_conn_str(self):
         """Get Azure SQL connection string from config"""
         return self.config.AZURE_SQL_CONNECTION_STRING
+    
+    def get_azure_sql_connection(self, retry_attempts: int = 3):
+        """
+        Get Azure SQL connection with enhanced authentication support and retry logic.
+        
+        Args:
+            retry_attempts: Number of retry attempts for connection failures
+            
+        Returns:
+            pyodbc.Connection: Database connection object
+            
+        Raises:
+            ConnectionError: If all connection attempts fail
+            ImportError: If pyodbc is not available
+        """
+        if not PYODBC_AVAILABLE:
+            raise ImportError("pyodbc is required for Azure SQL connections")
+            
+        conn_str = self.azure_sql_conn_str
+        if not conn_str:
+            raise ValueError("Azure SQL connection string is not configured")
+        
+        last_error = None
+        
+        for attempt in range(retry_attempts):
+            try:
+                self.logger.debug(f"Attempting Azure SQL connection (attempt {attempt + 1}/{retry_attempts})")
+                
+                # Create connection with timeout
+                conn = pyodbc.connect(conn_str, timeout=30)
+                
+                # Test the connection with a simple query
+                cursor = conn.cursor()
+                cursor.execute("SELECT 1")
+                cursor.fetchone()
+                cursor.close()
+                
+                self.logger.info(f"Successfully connected to Azure SQL using authentication method: {self._get_auth_method_from_conn_str(conn_str)}")
+                return conn
+                
+            except pyodbc.Error as e:
+                last_error = e
+                error_msg = str(e)
+                
+                # Log specific authentication errors
+                if "Authentication failed" in error_msg or "Login failed" in error_msg:
+                    self.logger.warning(f"Authentication failed on attempt {attempt + 1}: {error_msg}")
+                elif "Cannot open server" in error_msg or "Server not found" in error_msg:
+                    self.logger.warning(f"Server connection failed on attempt {attempt + 1}: {error_msg}")
+                else:
+                    self.logger.warning(f"Connection attempt {attempt + 1} failed: {error_msg}")
+                
+                # Wait before retry (exponential backoff)
+                if attempt < retry_attempts - 1:
+                    wait_time = 2 ** attempt  # 1s, 2s, 4s...
+                    self.logger.info(f"Waiting {wait_time} seconds before retry...")
+                    import time
+                    time.sleep(wait_time)
+            
+            except Exception as e:
+                last_error = e
+                self.logger.error(f"Unexpected error on connection attempt {attempt + 1}: {str(e)}")
+                
+                if attempt < retry_attempts - 1:
+                    import time
+                    time.sleep(2 ** attempt)
+        
+        # All attempts failed
+        auth_method = self._get_auth_method_from_conn_str(conn_str)
+        error_message = f"Failed to connect to Azure SQL after {retry_attempts} attempts using {auth_method}. Last error: {str(last_error)}"
+        
+        # Provide helpful troubleshooting information
+        troubleshooting = self._get_troubleshooting_info(auth_method)
+        self.logger.error(f"{error_message}\n\nTroubleshooting:\n{troubleshooting}")
+        
+        raise ConnectionError(error_message)
+    
+    def _get_auth_method_from_conn_str(self, conn_str: str) -> str:
+        """Extract authentication method from connection string for logging"""
+        if "Authentication=ActiveDirectoryMsi" in conn_str:
+            return "Managed Identity"
+        elif "Authentication=ActiveDirectoryPassword" in conn_str:
+            return "Azure AD Password"
+        elif "Authentication=ActiveDirectoryIntegrated" in conn_str:
+            return "Azure AD Integrated"
+        elif "Uid=" in conn_str and "Pwd=" in conn_str:
+            return "SQL Server Authentication"
+        else:
+            return "Unknown"
+    
+    def _get_troubleshooting_info(self, auth_method: str) -> str:
+        """Provide troubleshooting information based on authentication method"""
+        base_info = "1. Verify server name and database name are correct\n2. Check network connectivity to Azure\n3. Ensure firewall rules allow your IP address"
+        
+        if auth_method == "Managed Identity":
+            return f"{base_info}\n4. Verify managed identity is assigned to the resource\n5. Check if managed identity has SQL database permissions\n6. For user-assigned MI, verify client ID is correct"
+        elif auth_method == "Azure AD Password":
+            return f"{base_info}\n4. Verify Azure AD username and password\n5. Check if user account is not locked or expired\n6. Ensure user has SQL database permissions"
+        elif auth_method == "SQL Server Authentication":
+            return f"{base_info}\n4. Verify SQL username and password\n5. Check if SQL authentication is enabled on the server\n6. Ensure user has appropriate database permissions"
+        else:
+            return base_info
         
     async def initialize(self):
         """Initialize database and create tables if they don't exist"""
@@ -152,16 +255,10 @@ class DatabaseManager:
             await db.commit()
     
     def _initialize_azure_sql(self):
-        """Initialize Azure SQL database"""
-        if not PYODBC_AVAILABLE:
-            raise ImportError("pyodbc is required for Azure SQL connections")
-            
-        if not self.azure_sql_conn_str:
-            raise ValueError("AZURE_SQL_CONNECTION_STRING environment variable is required")
-        
+        """Initialize Azure SQL database with enhanced authentication support"""
         # Note: For production, this should be handled by database migration scripts
         # This is a simplified version for demonstration
-        conn = pyodbc.connect(self.azure_sql_conn_str)
+        conn = self.get_azure_sql_connection()
         cursor = conn.cursor()
         
         # Create file_metadata table
@@ -307,10 +404,10 @@ class DatabaseManager:
             return cursor.lastrowid
     
     async def _save_to_azure_sql(self, metadata: FileMetadata) -> int:
-        """Save metadata to Azure SQL database"""
+        """Save metadata to Azure SQL database with enhanced authentication"""
         # For async operations with pyodbc, we'll use asyncio.to_thread
         def _execute_insert():
-            conn = pyodbc.connect(self.azure_sql_conn_str)
+            conn = self.get_azure_sql_connection()
             cursor = conn.cursor()
             
             cursor.execute("""
@@ -379,9 +476,9 @@ class DatabaseManager:
             return None
     
     async def _get_from_azure_sql(self, file_id: int) -> Optional[FileMetadata]:
-        """Get metadata from Azure SQL database"""
+        """Get metadata from Azure SQL database with enhanced authentication"""
         def _execute_select():
-            conn = pyodbc.connect(self.azure_sql_conn_str)
+            conn = self.get_azure_sql_connection()
             cursor = conn.cursor()
             
             cursor.execute("""

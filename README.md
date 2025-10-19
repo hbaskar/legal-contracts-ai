@@ -148,11 +148,22 @@ Configuration is managed through `.env` files using python-dotenv for better sec
    AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;AccountName=youraccount;AccountKey=yourkey;EndpointSuffix=core.windows.net
    AZURE_STORAGE_CONTAINER_NAME=uploads
    
-   # Database (choose one)
+   # Database Configuration (choose one)
    DATABASE_TYPE=sqlite                    # For local development
    # DATABASE_TYPE=azuresql               # For production
    SQLITE_DATABASE_PATH=./data/metadata.db
-   AZURE_SQL_CONNECTION_STRING=Server=tcp:yourserver.database.windows.net,1433;Initial Catalog=yourdatabase;Authentication=Active Directory Default;
+   
+   # Azure SQL Authentication (when using azuresql)
+   AZURE_SQL_AUTH_METHOD=auto             # auto, managed_identity, ad_password, sql_auth
+   AZURE_SQL_SERVER=yourserver.database.windows.net
+   AZURE_SQL_DATABASE=yourdatabase
+   
+   # Optional: For managed identity authentication (RECOMMENDED)
+   # AZURE_SQL_MANAGED_IDENTITY_CLIENT_ID=your-client-id  # For user-assigned MI
+   
+   # Optional: For username/password authentication (NOT RECOMMENDED for production)
+   # AZURE_SQL_USERNAME=your-username
+   # AZURE_SQL_PASSWORD=your-password
    
    # Document Processing Configuration
    DEFAULT_CHUNKING_METHOD=intelligent     # Options: intelligent, heading, sentence, basic, paragraph
@@ -162,6 +173,38 @@ Configuration is managed through `.env` files using python-dotenv for better sec
    DEFAULT_SAS_EXPIRY_HOURS=24
    LOG_LEVEL=INFO
    ```
+
+### Azure SQL Authentication Methods
+
+The application supports multiple Azure SQL authentication methods for different deployment scenarios:
+
+#### 1. **Managed Identity (RECOMMENDED for Production)**
+```bash
+AZURE_SQL_AUTH_METHOD=managed_identity
+# System-assigned: No additional configuration needed
+# User-assigned: Set AZURE_SQL_MANAGED_IDENTITY_CLIENT_ID
+```
+
+#### 2. **Azure AD Password Authentication**
+```bash
+AZURE_SQL_AUTH_METHOD=ad_password
+AZURE_SQL_USERNAME=user@domain.com
+AZURE_SQL_PASSWORD=your-password
+```
+
+#### 3. **SQL Server Authentication (NOT RECOMMENDED for production)**
+```bash
+AZURE_SQL_AUTH_METHOD=sql_auth
+AZURE_SQL_USERNAME=sql-username
+AZURE_SQL_PASSWORD=sql-password
+```
+
+#### 4. **Automatic Selection (DEFAULT)**
+```bash
+AZURE_SQL_AUTH_METHOD=auto  # Automatically selects best method based on environment
+```
+
+For detailed authentication setup, see [Azure SQL Authentication Guide](docs/AZURE_SQL_AUTHENTICATION_GUIDE.md).
 
 ### Environment-Specific Configuration
 
