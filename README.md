@@ -39,6 +39,13 @@ fresh_start/
 ├── blob/                  # Blob processing
 │   ├── README.md          # Blob processing documentation
 │   └── blob_processor.py  # Blob processing utilities
+├── config/                # Configuration templates and validation
+│   ├── README.md          # Configuration guide
+│   ├── .env.example       # General configuration template
+│   ├── .env.local.example # Local development template
+│   ├── .env.staging.example # Staging environment template
+│   ├── .env.production.example # Production template
+│   └── validate_config.py # Configuration validation script
 ├── deployment/            # Deployment scripts
 │   ├── README.md          # Deployment documentation
 │   └── deploy.ps1         # PowerShell deployment script
@@ -131,15 +138,33 @@ Configuration is managed through `.env` files using python-dotenv for better sec
 
 ### Configuration Files
 
-- **`.env.example`** - Template with all available configuration options
-- **`.env`** - Main configuration file (create from .env.example)  
-- **`.env.local`** - Local overrides (automatically gitignored)
+The `config/` directory contains configuration templates for different environments:
 
-### Setup Configuration
+- **`config/.env.example`** - General template with all available options
+- **`config/.env.local.example`** - Local development with SQLite and Azurite
+- **`config/.env.staging.example`** - Staging/development with cloud resources
+- **`config/.env.production.example`** - Production with security best practices
+- **`config/validate_config.py`** - Configuration validation script
 
-1. **Copy the example file:**
+For detailed configuration guidance, see [config/README.md](config/README.md).
+
+### Quick Setup
+
+1. **Choose and copy the appropriate template:**
    ```bash
-   cp .env.example .env
+   # For local development
+   cp config/.env.local.example .env
+   
+   # For staging/development
+   cp config/.env.staging.example .env
+   
+   # For production (reference only)
+   cp config/.env.production.example .env
+   ```
+
+2. **Validate your configuration:**
+   ```bash
+   python config/validate_config.py --env local
    ```
 
 2. **Edit `.env` with your settings:**
@@ -221,8 +246,29 @@ For detailed authentication setup, see [Azure SQL Authentication Guide](docs/AZU
 
 ### Configuration Validation
 
-The application includes built-in configuration validation:
+The application includes multiple levels of configuration validation:
+
+**Built-in Validation:**
 - Validates required settings on startup
+- Provides clear error messages for missing or invalid configuration
+- Supports different configurations for different environments
+
+**Dedicated Validation Script:**
+```bash
+# Validate current configuration
+python config/validate_config.py
+
+# Validate for specific environment
+python config/validate_config.py --env production
+python config/validate_config.py --env staging
+python config/validate_config.py --env local
+```
+
+The validation script checks:
+- ✅ Required configuration values
+- ⚠️ Security best practices
+- 💡 Environment-specific recommendations
+- 🔧 Common configuration issues
 - Provides clear error messages for missing or invalid configuration
 - Supports different configurations for different environments
 
