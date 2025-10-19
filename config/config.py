@@ -30,6 +30,76 @@ except ImportError:
     logging.warning("python-dotenv not available, using system environment variables only")
 
 
+def log_environment_variables():
+    """Log all environment variables for debugging purposes"""
+    logger = logging.getLogger(__name__)
+    logger.info("=" * 60)
+    logger.info("ENVIRONMENT VARIABLES LOADED")
+    logger.info("=" * 60)
+    
+    # Get all environment variables and sort them
+    env_vars = dict(os.environ)
+    
+    # Categorize environment variables
+    azure_vars = {k: v for k, v in env_vars.items() if k.upper().startswith(('AZURE', 'FUNCTIONS'))}
+    database_vars = {k: v for k, v in env_vars.items() if 'DATABASE' in k.upper() or 'SQL' in k.upper()}
+    openai_vars = {k: v for k, v in env_vars.items() if 'OPENAI' in k.upper()}
+    search_vars = {k: v for k, v in env_vars.items() if 'SEARCH' in k.upper()}
+    storage_vars = {k: v for k, v in env_vars.items() if 'STORAGE' in k.upper() and not k.upper().startswith('AZURE')}
+    
+    def log_vars_safely(category, vars_dict):
+        """Log variables safely, masking sensitive values"""
+        if not vars_dict:
+            logger.info(f"{category}: No variables found")
+            return
+            
+        logger.info(f"{category}:")
+        for key, value in sorted(vars_dict.items()):
+            # Mask sensitive values
+            if any(sensitive in key.upper() for sensitive in ['KEY', 'SECRET', 'PASSWORD', 'TOKEN', 'CONNECTION']):
+                masked_value = value[:8] + "***" if len(value) > 8 else "***"
+                logger.info(f"  {key} = {masked_value}")
+            else:
+                logger.info(f"  {key} = {value}")
+        logger.info("")
+    
+    log_vars_safely("Azure & Functions", azure_vars)
+    log_vars_safely("Database", database_vars)
+    log_vars_safely("OpenAI", openai_vars)
+    log_vars_safely("Search", search_vars)
+    log_vars_safely("Storage", storage_vars)
+    
+    # Log other important variables
+    other_vars = {k: v for k, v in env_vars.items() 
+                  if not any(category in k.upper() for category in ['AZURE', 'FUNCTIONS', 'DATABASE', 'SQL', 'OPENAI', 'SEARCH', 'STORAGE'])
+                  and k.upper() in ['PYTHON_ISOLATE_WORKER_DEPENDENCIES', 'MAX_FILE_SIZE_MB', 'SAS_EXPIRY_HOURS', 'LOG_LEVEL']}
+    
+    log_vars_safely("Application", other_vars)
+    
+    logger.info(f"Total environment variables: {len(env_vars)}")
+    logger.info("=" * 60)
+
+
+def log_config_summary():
+    """Log a summary of the current configuration"""
+    logger = logging.getLogger(__name__)
+    logger.info("=" * 60)
+    logger.info("CONFIGURATION SUMMARY")
+    logger.info("=" * 60)
+    
+    config_obj = Config()
+    
+    logger.info(f"Database Type: {config_obj.DATABASE_TYPE}")
+    logger.info(f"Storage Container: {config_obj.AZURE_STORAGE_CONTAINER_NAME}")
+    logger.info(f"OpenAI Endpoint: {config_obj.AZURE_OPENAI_ENDPOINT}")
+    logger.info(f"Search Endpoint: {config_obj.AZURE_SEARCH_ENDPOINT}")
+    logger.info(f"Functions Runtime: {config_obj.FUNCTIONS_WORKER_RUNTIME}")
+    logger.info(f"Max File Size: {config_obj.MAX_FILE_SIZE_MB}MB")
+    logger.info(f"Log Level: {config_obj.LOG_LEVEL}")
+    
+    logger.info("=" * 60)
+
+
 class Config:
     """Configuration class for accessing environment variables"""
     
@@ -175,7 +245,15 @@ class Config:
     AZURE_OPENAI_EMBEDDING_DEPLOYMENT: str = os.getenv('AZURE_OPENAI_EMBEDDING_DEPLOYMENT', 'text-embedding-ada-002')
     AZURE_SEARCH_ENDPOINT: Optional[str] = os.getenv('AZURE_SEARCH_ENDPOINT')
     AZURE_SEARCH_KEY: Optional[str] = os.getenv('AZURE_SEARCH_KEY')
-    AZURE_SEARCH_INDEX: str = os.getenv('AZURE_SEARCH_INDEX', 'legal-documents-gc')
+    AZURE_SEARCH_DOC_INDEX: str = os.getenv('AZURE_SEARCH_DOC_INDEX', 'rag_doc-index')
+    AZURE_SEARCH_POLICY_INDEX: str = os.getenv('AZURE_SEARCH_POLICY_INDEX', 'rag_policy-index')
+    AZURE_SEARCH_DATASOURCE: Optional[str] = os.getenv('AZURE_SEARCH_DATASOURCE')
+    
+    # Backward compatibility property - use DOC_INDEX as the primary index
+    @property
+    def AZURE_SEARCH_INDEX(self) -> str:
+        """Backward compatibility: returns AZURE_SEARCH_DOC_INDEX"""
+        return self.AZURE_SEARCH_DOC_INDEX
     
     @classmethod
     def validate_config(cls) -> bool:
@@ -237,6 +315,10 @@ config = Config()
 # Log configuration on import (but only once)
 if not hasattr(config, '_logged'):
     logging.info("Configuration loaded successfully")
+    
+    # Log environment variables for debugging
+    log_environment_variables()
+    
     if config.DATABASE_TYPE == 'sqlite':
         logging.info(f"Using SQLite database: {config.SQLITE_DATABASE_PATH}")
     elif config.DATABASE_TYPE == 'azuresql':

@@ -29,9 +29,7 @@ fresh_start/
 ├── run_tests.py           # Test runner script
 ├── contracts/             # Core business logic
 │   ├── __init__.py        # Module initialization
-│   ├── config.py          # Configuration management
 │   ├── ai_services.py     # AI processing and OpenAI integration
-│   ├── database.py        # Database operations
 │   ├── storage.py         # Blob storage operations
 │   ├── index_creation.py  # Azure Search index management
 │   ├── chunk_comparison.py# Document chunking comparison
@@ -39,8 +37,10 @@ fresh_start/
 ├── blob/                  # Blob processing
 │   ├── README.md          # Blob processing documentation
 │   └── blob_processor.py  # Blob processing utilities
-├── config/                # Configuration templates and validation
+├── config/                # Configuration and data access
 │   ├── README.md          # Configuration guide
+│   ├── config.py          # Configuration management
+│   ├── database.py        # Database operations
 │   ├── .env.example       # General configuration template
 │   ├── .env.local.example # Local development template
 │   ├── .env.staging.example # Staging environment template

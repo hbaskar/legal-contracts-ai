@@ -11,7 +11,7 @@ This script will:
 import os
 from azure.storage.blob import BlobServiceClient
 from azure.core.exceptions import AzureError
-from contracts.config import config
+from config.config import config
 
 def setup_container():
     """Set up the Azure Storage container"""

@@ -29,8 +29,8 @@ from typing import Optional
 import asyncio
 
 # Import our custom modules
-from contracts.config import config
-from contracts.database import DatabaseManager
+from config.config import config
+from config.database import DatabaseManager
 from contracts.storage import BlobStorageManager
 from contracts.models import FileMetadata, UploadResponse
 
@@ -1284,14 +1284,14 @@ async def setup_azure_search_index(req: func.HttpRequest) -> func.HttpResponse:
             try:
                 from azure.search.documents.indexes import SearchIndexClient
                 from azure.core.credentials import AzureKeyCredential
-                from contracts.config import config
+                from config.config import config
                 
                 client = SearchIndexClient(
                     endpoint=config.AZURE_SEARCH_ENDPOINT,
                     credential=AzureKeyCredential(config.AZURE_SEARCH_KEY)
                 )
                 
-                target_index = index_name or config.AZURE_SEARCH_INDEX
+                target_index = index_name or config.AZURE_SEARCH_DOC_INDEX
                 
                 try:
                     client.delete_index(target_index)

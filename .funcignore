@@ -1,0 +1,26 @@
+# Azure Functions deployment exclusions
+.venv
+.git
+.gitignore
+.pytest_cache
+.vscode
+
+# Development and testing files
+tests/
+test_files/
+docs/
+run_tests.py
+
+# Development documentation
+README.md
+*.md
+
+# Configuration templates
+config/.env*.example
+config/validate_config.py
+
+# Postman collections (optional - remove if needed in production)
+postman/
+
+# Local data files (not needed in production)
+data/

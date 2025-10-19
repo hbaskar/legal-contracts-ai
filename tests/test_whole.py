@@ -46,7 +46,7 @@ except ImportError:
     print("⚠️ python-dotenv not available, using system environment variables only")
 
 try:
-    from contracts.config import config
+    from config.config import config
     from azure.storage.blob import BlobServiceClient
 except ImportError as e:
     print(f"❌ Import error: {e}")

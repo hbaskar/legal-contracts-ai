@@ -19,7 +19,7 @@ logging.basicConfig(
 
 try:
     from contracts.ai_services import extract_keyphrases_with_openai, generate_text_embedding
-    from contracts.config import config
+    from config.config import config
     
     def test_openai_error_handling():
         """Test that the OpenAI error handling works correctly"""

@@ -17,13 +17,13 @@ class TestConfigurationSystem(unittest.TestCase):
     
     def test_config_import(self):
         """Test that configuration can be imported"""
-        from contracts.config import config, Config
+        from config.config import config, Config
         
         self.assertIsInstance(config, Config)
         
     def test_default_values(self):
         """Test that default configuration values are available"""
-        from contracts.config import Config
+        from config.config import Config
         
         # Test that values are of correct types (values might come from .env file)
         self.assertIsInstance(Config.FUNCTIONS_WORKER_RUNTIME, str)
@@ -38,7 +38,7 @@ class TestConfigurationSystem(unittest.TestCase):
         
     def test_environment_info(self):
         """Test environment info method"""
-        from contracts.config import config
+        from config.config import config
         
         env_info = config.get_environment_info()
         
@@ -53,7 +53,7 @@ class TestConfigurationSystem(unittest.TestCase):
             
     def test_config_validation_method_exists(self):
         """Test configuration validation method exists and works"""
-        from contracts.config import Config
+        from config.config import Config
         
         # Test that validation method exists and returns a boolean
         result = Config.validate_config()
@@ -93,7 +93,7 @@ class TestConfigurationSystem(unittest.TestCase):
         
     def test_config_type_conversions(self):
         """Test that string environment variables are properly converted"""
-        from contracts.config import Config
+        from config.config import Config
         
         # Test integer conversions
         self.assertIsInstance(Config.MAX_FILE_SIZE_MB, int)
@@ -105,9 +105,9 @@ class TestConfigurationSystem(unittest.TestCase):
         
     def test_database_managers_use_config(self):
         """Test that database and storage managers use the config"""
-        from contracts.database import DatabaseManager
+        from config.database import DatabaseManager
         from contracts.storage import BlobStorageManager
-        from contracts.config import config
+        from config.config import config
         
         # Test database manager
         db_mgr = DatabaseManager()
@@ -121,3 +121,4 @@ class TestConfigurationSystem(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

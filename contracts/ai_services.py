@@ -29,14 +29,21 @@ try:
 except ImportError as e:
     logging.error(f"Missing required document processing packages: {e}")
 
-from contracts.config import config
+from config.config import config
 
-# Database imports
-try:
-    from contracts.database import DatabaseManager
-except ImportError as e:
-    logging.error(f"Missing database manager: {e}")
-    DatabaseManager = None
+# Database imports - using lazy import to avoid circular dependencies
+DatabaseManager = None
+
+def get_database_manager():
+    """Lazy import of DatabaseManager to avoid circular dependencies"""
+    global DatabaseManager
+    if DatabaseManager is None:
+        try:
+            from config.database import DatabaseManager
+        except ImportError as e:
+            logging.error(f"Missing database manager: {e}")
+            DatabaseManager = None
+    return DatabaseManager
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -79,7 +86,7 @@ def get_search_client():
         logger.info(f"🔍 Initializing Search client with endpoint: {config.AZURE_SEARCH_ENDPOINT}")
         search_client = SearchClient(
             endpoint=config.AZURE_SEARCH_ENDPOINT,
-            index_name=config.AZURE_SEARCH_INDEX,
+            index_name=config.AZURE_SEARCH_DOC_INDEX,
             credential=AzureKeyCredential(config.AZURE_SEARCH_KEY)
         )
         logger.info("✅ Search client initialized successfully")
@@ -1057,7 +1064,7 @@ def get_documents_from_azure_search_index(filename: str = None, document_id: str
                 "document_id": document_id,
                 "limit": limit
             },
-            "index_name": config.AZURE_SEARCH_INDEX
+            "index_name": config.AZURE_SEARCH_DOC_INDEX
         }
         
     except Exception as e:
@@ -1128,7 +1135,7 @@ async def process_document_with_ai_keyphrases(file_path: str, filename: str, for
     """Enhanced version that uses OpenAI to extract intelligent key phrases and saves chunks to database"""
     try:
         # Import config to get default chunking method
-        from contracts.config import config
+        from config.config import config
         
         # Use environment variable default if no chunking method provided
         if chunking_method is None:
@@ -1139,9 +1146,10 @@ async def process_document_with_ai_keyphrases(file_path: str, filename: str, for
         # Initialize database manager to save chunks locally
         db_mgr = None
         file_id = None
-        if DatabaseManager:
+        DatabaseManagerClass = get_database_manager()
+        if DatabaseManagerClass:
             try:
-                db_mgr = DatabaseManager()
+                db_mgr = DatabaseManagerClass()
                 await db_mgr.initialize()
                 
                 # Try to find existing file by filename or create placeholder

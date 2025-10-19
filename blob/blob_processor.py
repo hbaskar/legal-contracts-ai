@@ -11,7 +11,7 @@ from datetime import datetime
 
 # Import AI services functionality
 from contracts.ai_services import process_document_with_ai_keyphrases
-from contracts.config import config
+from config.config import config
 
 # Configure logging
 logger = logging.getLogger(__name__)

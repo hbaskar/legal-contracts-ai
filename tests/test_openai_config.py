@@ -18,7 +18,7 @@ logging.basicConfig(
 )
 
 try:
-    from contracts.config import config
+    from config.config import config
     
     def test_azure_openai_config():
         """Test Azure OpenAI configuration"""

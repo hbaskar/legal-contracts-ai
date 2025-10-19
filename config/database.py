@@ -22,7 +22,7 @@ class DatabaseManager:
     """Manages database operations for file metadata"""
     
     def __init__(self):
-        from contracts.config import config
+        from config.config import config
         self.config = config
         self.db_type = config.DATABASE_TYPE
         self.sqlite_path = config.SQLITE_DATABASE_PATH
@@ -1021,7 +1021,7 @@ class DatabaseManager:
                             'is_compliant': bool(row[15]) if row[15] is not None else None,  # is_compliant
                             'search_score': None,  # Not available in stored data
                             'upload_status': row[3],  # upload_status
-                            'upload_timestamp': row[4],  # upload_timestamp
+                            'upload_timestamp': row[4].isoformat() if row[4] and hasattr(row[4], 'isoformat') else str(row[4]) if row[4] else None,  # upload_timestamp
                             'index_name': row[2],  # index_name
                             'embedding_dimensions': row[17],  # embedding_dimensions
                             'error_message': row[18]  # error_message
@@ -1086,7 +1086,7 @@ class DatabaseManager:
                             'is_compliant': bool(row[15]) if row[15] is not None else None,  # is_compliant
                             'search_score': None,  # Not available in stored data
                             'upload_status': row[3],  # upload_status
-                            'upload_timestamp': row[4],  # upload_timestamp
+                            'upload_timestamp': row[4].isoformat() if row[4] and hasattr(row[4], 'isoformat') else str(row[4]) if row[4] else None,  # upload_timestamp
                             'index_name': row[2],  # index_name
                             'embedding_dimensions': row[17],  # embedding_dimensions
                             'error_message': row[18]  # error_message

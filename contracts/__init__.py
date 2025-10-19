@@ -10,7 +10,7 @@ import base64
 import azure.functions as func
 
 # Import configuration (handles .env loading internally)
-from contracts.config import config
+from config.config import config
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

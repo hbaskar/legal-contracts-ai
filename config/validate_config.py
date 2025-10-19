@@ -23,7 +23,16 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 try:
-    from contracts.config import Config
+    # Import from the config directory (this file's directory)
+    import importlib.util
+    config_dir = Path(__file__).parent
+    
+    # Import config.py directly
+    config_spec = importlib.util.spec_from_file_location("config_module", config_dir / "config.py")
+    config_module = importlib.util.module_from_spec(config_spec)
+    config_spec.loader.exec_module(config_module)
+    Config = config_module.Config
+    
 except ImportError as e:
     print(f"Error importing config module: {e}")
     print("Make sure you're running this script from the project root or install dependencies")

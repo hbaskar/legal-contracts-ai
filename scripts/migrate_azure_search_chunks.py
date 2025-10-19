@@ -35,8 +35,8 @@ import logging
 # Add the project root to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from contracts.database import DatabaseManager
-from contracts.config import config
+from config.database import DatabaseManager
+from config.config import config
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

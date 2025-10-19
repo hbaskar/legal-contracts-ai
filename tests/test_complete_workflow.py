@@ -13,7 +13,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from azure.storage.blob import BlobServiceClient
-from contracts.config import config
+from config.config import config
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

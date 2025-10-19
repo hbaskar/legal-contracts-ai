@@ -12,7 +12,7 @@ from azure.search.documents.indexes.models import (
 )
 
 # Import configuration
-from contracts.config import config
+from config.config import config
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ def create_document_index_if_not_exists(index_name: str = None) -> Dict:
         Dict with status, message, and operation details
     """
     if index_name is None:
-        index_name = config.AZURE_SEARCH_INDEX
+        index_name = config.AZURE_SEARCH_DOC_INDEX
     
     try:
         logger.info(f"🔍 Checking if Azure Search index '{index_name}' exists...")
@@ -229,7 +229,7 @@ def ensure_search_index_exists(index_name: str = None) -> Dict:
         Dict with status and operation details
     """
     if index_name is None:
-        index_name = config.AZURE_SEARCH_INDEX
+        index_name = config.AZURE_SEARCH_DOC_INDEX
     
     logger.info(f"🔍 Ensuring Azure Search index '{index_name}' is ready...")
     

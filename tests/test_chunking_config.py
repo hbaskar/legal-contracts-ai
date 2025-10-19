@@ -16,7 +16,7 @@ def test_chunking_method_config():
     
     # Test 1: Check config loading
     try:
-        from contracts.config import config
+        from config.config import config
         print(f"✅ Config loaded successfully")
         print(f"   DEFAULT_CHUNKING_METHOD: {config.DEFAULT_CHUNKING_METHOD}")
     except Exception as e:

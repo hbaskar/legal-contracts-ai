@@ -14,7 +14,7 @@ from datetime import datetime
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from contracts.database import DatabaseManager
+from config.database import DatabaseManager
 from contracts.ai_services import intelligent_chunk_with_openai, simple_chunk_text, heading_based_chunking
 
 logger = logging.getLogger(__name__)

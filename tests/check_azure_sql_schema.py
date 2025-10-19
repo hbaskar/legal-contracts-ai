@@ -16,8 +16,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 try:
-    from contracts.database import DatabaseManager
-    from contracts.config import config
+    from config.database import DatabaseManager
+    from config.config import config
     import pyodbc
     
     async def check_azure_sql_schema():

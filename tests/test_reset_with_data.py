@@ -10,7 +10,7 @@ import logging
 # Add the project root to Python path
 sys.path.insert(0, os.path.dirname(__file__))
 
-from contracts.database import DatabaseManager
+from config.database import DatabaseManager
 from contracts.models import FileMetadata
 from datetime import datetime, UTC
 

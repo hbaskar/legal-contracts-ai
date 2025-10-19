@@ -16,7 +16,7 @@ class BlobStorageManager:
     """Manages Azure Blob Storage operations"""
     
     def __init__(self):
-        from contracts.config import config
+        from config.config import config
         self.storage_connection_string = config.AZURE_STORAGE_CONNECTION_STRING
         self.container_name = config.AZURE_STORAGE_CONTAINER_NAME
         self.logger = logging.getLogger(__name__)

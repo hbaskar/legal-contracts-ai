@@ -1,0 +1,157 @@
+[
+  {
+    "name": "AzureWebJobsStorage",
+    "value": "__REPLACE_WITH_PRODUCTION_STORAGE_CONNECTION_STRING__",
+    "slotSetting": false
+  },
+  {
+    "name": "FUNCTIONS_WORKER_RUNTIME",
+    "value": "python",
+    "slotSetting": false
+  },
+  {
+    "name": "AzureWebJobsFeatureFlags",
+    "value": "EnableWorkerIndexing",
+    "slotSetting": false
+  },
+  {
+    "name": "PYTHON_ISOLATE_WORKER_DEPENDENCIES",
+    "value": "1",
+    "slotSetting": false
+  },
+  {
+    "name": "DATABASE_TYPE",
+    "value": "azuresql",
+    "slotSetting": false
+  },
+  {
+    "name": "DEFAULT_CHUNKING_METHOD",
+    "value": "heading",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_SQL_DRIVER",
+    "value": "ODBC Driver 18 for SQL Server",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_SQL_PORT",
+    "value": "1433",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_SQL_SERVER",
+    "value": "__REPLACE_WITH_PRODUCTION_SQL_SERVER__",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_SQL_DATABASE",
+    "value": "__REPLACE_WITH_PRODUCTION_DATABASE__",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_SQL_USERNAME",
+    "value": "__REPLACE_WITH_PRODUCTION_SQL_USERNAME__",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_SQL_PASSWORD",
+    "value": "__REPLACE_WITH_PRODUCTION_SQL_PASSWORD__",
+    "slotSetting": true
+  },
+  {
+    "name": "AZURE_OPENAI_KEY",
+    "value": "__REPLACE_WITH_PRODUCTION_OPENAI_KEY__",
+    "slotSetting": true
+  },
+  {
+    "name": "AZURE_OPENAI_ENDPOINT",
+    "value": "__REPLACE_WITH_PRODUCTION_OPENAI_ENDPOINT__",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_OPENAI_API_VERSION",
+    "value": "2024-02-01",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_OPENAI_MODEL_DEPLOYMENT",
+    "value": "__REPLACE_WITH_PRODUCTION_MODEL_DEPLOYMENT__",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_OPENAI_EMBEDDING_DEPLOYMENT_ID",
+    "value": "text-embedding-ada-002",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_SEARCH_ENDPOINT",
+    "value": "__REPLACE_WITH_PRODUCTION_SEARCH_ENDPOINT__",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_SEARCH_KEY",
+    "value": "__REPLACE_WITH_PRODUCTION_SEARCH_KEY__",
+    "slotSetting": true
+  },
+  {
+    "name": "AZURE_SEARCH_DOC_INDEX",
+    "value": "rag_doc-index-prod",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_SEARCH_POLICY_INDEX",
+    "value": "rag_policy-index-prod",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_SEARCH_DATASOURCE",
+    "value": "__REPLACE_WITH_PRODUCTION_DATASOURCE__",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_STORAGE_CONNECTION_STRING",
+    "value": "__REPLACE_WITH_PRODUCTION_STORAGE_CONNECTION_STRING__",
+    "slotSetting": true
+  },
+  {
+    "name": "AZURE_STORAGE_CONTAINER_NAME",
+    "value": "uploads",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_STORAGE_ACCOUNT_URL",
+    "value": "__REPLACE_WITH_PRODUCTION_STORAGE_URL__",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_STORAGE_ACCOUNT_NAME",
+    "value": "__REPLACE_WITH_PRODUCTION_STORAGE_ACCOUNT_NAME__",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_STORAGE_ACCOUNT_KEY",
+    "value": "__REPLACE_WITH_PRODUCTION_STORAGE_KEY__",
+    "slotSetting": true
+  },
+  {
+    "name": "AZURE_AI_SERVICES_ENDPOINT",
+    "value": "__REPLACE_WITH_PRODUCTION_AI_SERVICES_ENDPOINT__",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_AI_SERVICES_KEY",
+    "value": "__REPLACE_WITH_PRODUCTION_AI_SERVICES_KEY__",
+    "slotSetting": true
+  },
+  {
+    "name": "AZURE_SENDGRID_API_KEY",
+    "value": "__REPLACE_WITH_PRODUCTION_SENDGRID_KEY__",
+    "slotSetting": true
+  },
+  {
+    "name": "AZURE_NOTIFICATION_EMAIL_FROM",
+    "value": "noreply@yourdomain.com",
+    "slotSetting": false
+  }
+]

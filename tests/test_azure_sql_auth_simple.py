@@ -86,7 +86,7 @@ def test_connection_string_building():
 
 def test_database_manager_connection_helper():
     """Test the database manager connection helper methods"""
-    from contracts.database import DatabaseManager
+    from config.database import DatabaseManager
     
     # Test authentication method detection
     db_manager = DatabaseManager()

@@ -119,7 +119,7 @@ appsettings.json
 local.settings.json
 
 # Azure Functions Core Tools
-.vscode/
+
 *.user
 *.suo
 *.cache
@@ -159,3 +159,4 @@ data/
 .Trashes
 ehthumbs.db
 Thumbs.db
+.python_packages

@@ -6,8 +6,8 @@ import os
 import pytest
 import logging
 from unittest.mock import Mock, patch, MagicMock
-from contracts.database import DatabaseManager
-from contracts.config import Config
+from config.database import DatabaseManager
+from config.config import Config
 
 # Configure logging for tests
 logging.basicConfig(level=logging.DEBUG)
@@ -44,7 +44,7 @@ class TestAzureSQLAuthentication:
         config = Config()
         # Force re-instantiation by reloading the module
         import importlib
-        import contracts.config
+        import config.config
         importlib.reload(contracts.config)
         config = contracts.config.Config()
         

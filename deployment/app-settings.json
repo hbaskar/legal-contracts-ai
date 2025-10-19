@@ -1,0 +1,162 @@
+[
+  {
+    "name": "AzureWebJobsStorage",
+    "value": "UseDevelopmentStorage=true",
+    "slotSetting": false
+  },
+  {
+    "name": "FUNCTIONS_WORKER_RUNTIME",
+    "value": "python",
+    "slotSetting": false
+  },
+  {
+    "name": "AzureWebJobsFeatureFlags",
+    "value": "EnableWorkerIndexing",
+    "slotSetting": false
+  },
+  {
+    "name": "PYTHON_ISOLATE_WORKER_DEPENDENCIES",
+    "value": "1",
+    "slotSetting": false
+  },
+  {
+    "name": "DATABASE_TYPE",
+    "value": "sqlite",
+    "slotSetting": false
+  },
+  {
+    "name": "SQLITE_DATABASE_PATH",
+    "value": "./data/metadata.db",
+    "slotSetting": false
+  },
+  {
+    "name": "DEFAULT_CHUNKING_METHOD",
+    "value": "heading",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_SQL_DRIVER",
+    "value": "ODBC Driver 18 for SQL Server",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_SQL_PORT",
+    "value": "1433",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_SQL_SERVER",
+    "value": "ggndadev-sqlsvr01.database.windows.net",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_SQL_DATABASE",
+    "value": "CMSDEVDB",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_SQL_USERNAME",
+    "value": "hari.baskarus@gavelguardai.com",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_SQL_PASSWORD",
+    "value": "Ga150136##",
+    "slotSetting": true
+  },
+  {
+    "name": "AZURE_OPENAI_KEY",
+    "value": "YOUR_AZURE_OPENAI_KEY_HERE",
+    "slotSetting": true
+  },
+  {
+    "name": "AZURE_OPENAI_ENDPOINT",
+    "value": "https://gg-cmsopenai.openai.azure.com/",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_OPENAI_API_VERSION",
+    "value": "2024-02-01",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_OPENAI_MODEL_DEPLOYMENT",
+    "value": "gpt-4o-cms",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_OPENAI_EMBEDDING_DEPLOYMENT_ID",
+    "value": "text-embedding-ada-002",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_SEARCH_ENDPOINT",
+    "value": "https://ggaisearchservice.search.windows.net",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_SEARCH_KEY",
+    "value": "YOUR_AZURE_SEARCH_KEY_HERE",
+    "slotSetting": true
+  },
+  {
+    "name": "AZURE_SEARCH_DOC_INDEX",
+    "value": "rag_doc-index",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_SEARCH_POLICY_INDEX",
+    "value": "rag_policy-index",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_SEARCH_DATASOURCE",
+    "value": "chunkingsample-datasource",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_STORAGE_CONNECTION_STRING",
+    "value": "DefaultEndpointsProtocol=https;AccountName=YOUR_STORAGE_ACCOUNT;AccountKey=YOUR_STORAGE_KEY_HERE;EndpointSuffix=core.windows.net",
+    "slotSetting": true
+  },
+  {
+    "name": "AZURE_STORAGE_CONTAINER_NAME",
+    "value": "uploads",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_STORAGE_ACCOUNT_URL",
+    "value": "https://ggcorestorageacc.blob.core.windows.net",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_STORAGE_ACCOUNT_NAME",
+    "value": "ggcorestorageacc",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_STORAGE_ACCOUNT_KEY",
+    "value": "YOUR_STORAGE_ACCOUNT_KEY_HERE",
+    "slotSetting": true
+  },
+  {
+    "name": "AZURE_AI_SERVICES_ENDPOINT",
+    "value": "https://gg-ai-service-001.cognitiveservices.azure.com/",
+    "slotSetting": false
+  },
+  {
+    "name": "AZURE_AI_SERVICES_KEY",
+    "value": "YOUR_AZURE_AI_SERVICES_KEY_HERE",
+    "slotSetting": true
+  },
+  {
+    "name": "AZURE_SENDGRID_API_KEY",
+    "value": "",
+    "slotSetting": true
+  },
+  {
+    "name": "AZURE_NOTIFICATION_EMAIL_FROM",
+    "value": "noreply@legalworkflow.com",
+    "slotSetting": false
+  }
+]

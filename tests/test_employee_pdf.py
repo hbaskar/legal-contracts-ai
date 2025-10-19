@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
     from contracts.chunk_comparison import compare_document_chunking, get_chunking_report
-    from contracts.database import DatabaseManager
+    from config.database import DatabaseManager
     from contracts.models import FileMetadata
     from datetime import datetime
     
@@ -126,7 +126,7 @@ try:
         async def _check_processing_results(self, file_id: int):
             """Check database for processing results"""
             try:
-                from contracts.database import DatabaseManager
+                from config.database import DatabaseManager
                 
                 # Initialize database connection
                 db = DatabaseManager()

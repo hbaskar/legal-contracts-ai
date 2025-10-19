@@ -21,9 +21,9 @@ logging.basicConfig(
 )
 
 try:
-    from contracts.database import DatabaseManager
+    from config.database import DatabaseManager
     from contracts.models import FileMetadata
-    from contracts.config import config
+    from config.config import config
     
     async def test_chunk_comparison_functions():
         """Test the chunk comparison database functions"""

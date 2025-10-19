@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 try:
     from contracts.chunk_comparison import compare_document_chunking, get_chunking_report
-    from contracts.database import DatabaseManager
+    from config.database import DatabaseManager
     from contracts.models import FileMetadata
     from datetime import datetime
     

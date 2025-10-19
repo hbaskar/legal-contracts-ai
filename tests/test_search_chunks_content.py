@@ -15,7 +15,7 @@ async def test_azure_search_chunks_with_content():
     print("=" * 50)
     
     try:
-        from contracts.database import DatabaseManager
+        from config.database import DatabaseManager
         
         # Initialize database manager
         db_mgr = DatabaseManager()

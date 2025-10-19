@@ -15,7 +15,7 @@ import pyodbc
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from contracts.config import config
+from config.config import config
 
 def test_sql_connection():
     """Test the SQL Server connection and create table"""
@@ -148,7 +148,7 @@ def test_database_manager():
     print(f"\n🧪 Testing DatabaseManager initialization...")
     
     try:
-        from contracts.database import DatabaseManager
+        from config.database import DatabaseManager
         import asyncio
         
         async def test_manager():

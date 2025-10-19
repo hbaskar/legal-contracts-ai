@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "name": "Fresh Start Document Processing API",
-    "description": "Complete API collection for the Fresh Start document processing Azure Functions app. Includes endpoints for file upload, document processing, health checks, chunk comparison analysis, and direct Azure Search index content access. Features admin functions for database and search index management, plus comprehensive content retrieval from Azure Search without database joins. Includes admin functions for database and search index management.",
+    "description": "Complete API collection for the Fresh Start document processing Azure Functions app. Includes endpoints for file upload, document processing, health checks, chunk comparison analysis, and direct Azure Search index content access. Features admin functions for database and search index management, plus comprehensive content retrieval from Azure Search without database joins. Includes admin functions for database and search index management. All protected endpoints include Azure Function authentication via function keys.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "12345678"
   },
@@ -92,13 +92,20 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/process_document",
+              "raw": "{{base_url}}/api/process_document?code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "process_document"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
+                }
               ]
             }
           },
@@ -163,13 +170,20 @@
               ]
             },
             "url": {
-              "raw": "{{base_url}}/api/upload",
+              "raw": "{{base_url}}/api/upload?code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "upload"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
+                }
               ]
             }
           },
@@ -212,7 +226,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/files/{{last_file_id}}",
+              "raw": "{{base_url}}/api/files/{{last_file_id}}?code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -220,6 +234,13 @@
                 "api",
                 "files",
                 "{{last_file_id}}"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
+                }
               ]
             }
           },
@@ -317,13 +338,20 @@
               }
             },
             "url": {
-              "raw": "{{base_url}}/api/process_document",
+              "raw": "{{base_url}}/api/process_document?code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "process_document"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
+                }
               ]
             }
           },
@@ -367,13 +395,20 @@
               "raw": "{\n    \"file_content\": \"{{sample_base64_content}}\",\n    \"filename\": \"sample_document_fixed.txt\",\n    \"force_reindex\": true,\n    \"chunking_method\": \"fixed\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/process_document",
+              "raw": "{{base_url}}/api/process_document?code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "process_document"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
+                }
               ]
             }
           },
@@ -438,13 +473,20 @@
               }
             },
             "url": {
-              "raw": "{{base_url}}/api/process_document",
+              "raw": "{{base_url}}/api/process_document?code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "process_document"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
+                }
               ]
             }
           },
@@ -488,13 +530,20 @@
               "raw": "{\n    \"file_content\": \"{{sample_base64_content}}\",\n    \"filename\": \"sample_document_heading.txt\",\n    \"force_reindex\": true,\n    \"chunking_method\": \"heading\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/process_document",
+              "raw": "{{base_url}}/api/process_document?code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "process_document"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
+                }
               ]
             }
           },
@@ -584,13 +633,20 @@
               "raw": "{\n    \"file_content\": \"{{comprehensive_doc_base64}}\",\n    \"filename\": \"comprehensive_employee_handbook.txt\",\n    \"force_reindex\": true,\n    \"chunking_method\": \"intelligent\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/process_document",
+              "raw": "{{base_url}}/api/process_document?code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "process_document"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
+                }
               ]
             }
           },
@@ -651,7 +707,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/search/documents",
+              "raw": "{{base_url}}/api/search/documents?code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -659,6 +715,13 @@
                 "api",
                 "search",
                 "documents"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
+                }
               ]
             }
           },
@@ -702,7 +765,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/search/documents?limit=5",
+              "raw": "{{base_url}}/api/search/documents?limit=5&code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -715,6 +778,11 @@
                 {
                   "key": "limit",
                   "value": "5"
+                },
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
                 }
               ]
             }
@@ -767,7 +835,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/search/documents?filename=sample.txt",
+              "raw": "{{base_url}}/api/search/documents?filename=sample.txt&code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -781,6 +849,11 @@
                   "key": "filename",
                   "value": "sample.txt",
                   "description": "Filter documents by filename (change this to test with your files)"
+                },
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
                 }
               ]
             }
@@ -852,7 +925,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/search/documents?document_id=azure_search_content_test_4",
+              "raw": "{{base_url}}/api/search/documents?document_id=azure_search_content_test_4&code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -866,6 +939,11 @@
                   "key": "document_id",
                   "value": "azure_search_content_test_4",
                   "description": "Specific document ID to retrieve (update with actual document ID)"
+                },
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
                 }
               ]
             }
@@ -915,7 +993,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/search/documents?limit=10&filename=",
+              "raw": "{{base_url}}/api/search/documents?limit=10&filename=&code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -935,6 +1013,11 @@
                   "value": "",
                   "description": "Optional filename filter (leave empty for all files)",
                   "disabled": true
+                },
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
                 }
               ]
             }
@@ -1021,7 +1104,7 @@
               }
             },
             "url": {
-              "raw": "{{base_url}}/api/database/reset",
+              "raw": "{{base_url}}/api/database/reset?code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -1029,6 +1112,13 @@
                 "api",
                 "database",
                 "reset"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
+                }
               ]
             }
           },
@@ -1067,7 +1157,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/database/reset?confirm=yes",
+              "raw": "{{base_url}}/api/database/reset?confirm=yes&code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -1081,6 +1171,11 @@
                   "key": "confirm",
                   "value": "yes",
                   "description": "Required confirmation to proceed with reset"
+                },
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
                 }
               ]
             }
@@ -1131,7 +1226,7 @@
               }
             },
             "url": {
-              "raw": "{{base_url}}/api/database/reset",
+              "raw": "{{base_url}}/api/database/reset?code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -1139,6 +1234,13 @@
                 "api",
                 "database",
                 "reset"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
+                }
               ]
             }
           },
@@ -1184,13 +1286,20 @@
               "formdata": []
             },
             "url": {
-              "raw": "{{base_url}}/api/upload",
+              "raw": "{{base_url}}/api/upload?code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "upload"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
+                }
               ]
             }
           },
@@ -1234,13 +1343,20 @@
               "raw": "{\n    \"filename\": \"test.txt\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/process_document",
+              "raw": "{{base_url}}/api/process_document?code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "process_document"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
+                }
               ]
             }
           },
@@ -1276,7 +1392,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/files/99999",
+              "raw": "{{base_url}}/api/files/99999?code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -1284,225 +1400,12 @@
                 "api",
                 "files",
                 "99999"
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Admin Functions",
-      "item": [
-        {
-          "name": "Database Reset",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 200 or 207\", function () {",
-                  "    pm.expect(pm.response.code).to.be.oneOf([200, 207]);",
-                  "});",
-                  "",
-                  "pm.test(\"Response has status field\", function () {",
-                  "    const jsonData = pm.response.json();",
-                  "    pm.expect(jsonData).to.have.property('status');",
-                  "});",
-                  "",
-                  "pm.test(\"Reset operation completed\", function () {",
-                  "    const jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.status).to.be.oneOf(['success', 'partial_success']);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"confirm\": \"yes\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/database/reset",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "database",
-                "reset"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Azure Search Index Reset",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 200 or 207\", function () {",
-                  "    pm.expect(pm.response.code).to.be.oneOf([200, 207]);",
-                  "});",
-                  "",
-                  "pm.test(\"Response has status field\", function () {",
-                  "    const jsonData = pm.response.json();",
-                  "    pm.expect(jsonData).to.have.property('status');",
-                  "});",
-                  "",
-                  "pm.test(\"Search reset completed\", function () {",
-                  "    const jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.status).to.be.oneOf(['success', 'partial_success']);",
-                  "});",
-                  "",
-                  "pm.test(\"Documents deleted count present\", function () {",
-                  "    const jsonData = pm.response.json();",
-                  "    pm.expect(jsonData).to.have.property('deleted_documents');",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"confirm\": \"yes\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/search/reset",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "search",
-                "reset"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Database Reset (Force)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 200 or 207\", function () {",
-                  "    pm.expect(pm.response.code).to.be.oneOf([200, 207]);",
-                  "});",
-                  "",
-                  "pm.test(\"Force reset completed\", function () {",
-                  "    const jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.status).to.be.oneOf(['success', 'partial_success']);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"force\": true\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/database/reset?force=true",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "database",
-                "reset"
               ],
               "query": [
                 {
-                  "key": "force",
-                  "value": "true"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Azure Search Index Reset (Force)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 200 or 207\", function () {",
-                  "    pm.expect(pm.response.code).to.be.oneOf([200, 207]);",
-                  "});",
-                  "",
-                  "pm.test(\"Force search reset completed\", function () {",
-                  "    const jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.status).to.be.oneOf(['success', 'partial_success']);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"force\": true\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/search/reset?force=true",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "search",
-                "reset"
-              ],
-              "query": [
-                {
-                  "key": "force",
-                  "value": "true"
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
                 }
               ]
             }
@@ -1553,7 +1456,7 @@
               "raw": "{\n    \"confirm\": \"yes\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/database/reset",
+              "raw": "{{base_url}}/api/database/reset?code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -1561,6 +1464,13 @@
                 "api",
                 "database",
                 "reset"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
+                }
               ]
             }
           },
@@ -1610,7 +1520,7 @@
               "raw": "{\n    \"confirm\": \"yes\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/search/reset",
+              "raw": "{{base_url}}/api/search/reset?code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -1618,6 +1528,13 @@
                 "api",
                 "search",
                 "reset"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
+                }
               ]
             }
           },
@@ -1657,7 +1574,7 @@
               "raw": "{\n    \"force\": true\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/database/reset?force=true",
+              "raw": "{{base_url}}/api/database/reset?force=true&code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -1670,6 +1587,11 @@
                 {
                   "key": "force",
                   "value": "true"
+                },
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
                 }
               ]
             }
@@ -1710,7 +1632,7 @@
               "raw": "{\n    \"force\": true\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/search/reset?force=true",
+              "raw": "{{base_url}}/api/search/reset?force=true&code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -1723,6 +1645,255 @@
                 {
                   "key": "force",
                   "value": "true"
+                },
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Functions",
+      "item": [
+        {
+          "name": "Database Reset",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 or 207\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 207]);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has status field\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "});",
+                  "",
+                  "pm.test(\"Reset operation completed\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.be.oneOf(['success', 'partial_success']);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"confirm\": \"yes\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/database/reset?code={{function_key}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "database",
+                "reset"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Azure Search Index Reset",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 or 207\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 207]);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has status field\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "});",
+                  "",
+                  "pm.test(\"Search reset completed\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.be.oneOf(['success', 'partial_success']);",
+                  "});",
+                  "",
+                  "pm.test(\"Documents deleted count present\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('deleted_documents');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"confirm\": \"yes\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/search/reset?code={{function_key}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "search",
+                "reset"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Database Reset (Force)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 or 207\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 207]);",
+                  "});",
+                  "",
+                  "pm.test(\"Force reset completed\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.be.oneOf(['success', 'partial_success']);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"force\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/database/reset?force=true&code={{function_key}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "database",
+                "reset"
+              ],
+              "query": [
+                {
+                  "key": "force",
+                  "value": "true"
+                },
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Azure Search Index Reset (Force)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 or 207\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 207]);",
+                  "});",
+                  "",
+                  "pm.test(\"Force search reset completed\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.be.oneOf(['success', 'partial_success']);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"force\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/search/reset?force=true&code={{function_key}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "search",
+                "reset"
+              ],
+              "query": [
+                {
+                  "key": "force",
+                  "value": "true"
+                },
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
                 }
               ]
             }
@@ -1765,7 +1936,7 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/api/search/delete/document?document_id={{document_id}}",
+              "raw": "{{base_url}}/api/search/delete/document?document_id={{document_id}}&code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -1780,6 +1951,11 @@
                   "key": "document_id",
                   "value": "{{document_id}}",
                   "description": "The specific document ID to delete"
+                },
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
                 }
               ]
             }
@@ -1816,7 +1992,7 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/api/search/delete/document?filename={{filename}}",
+              "raw": "{{base_url}}/api/search/delete/document?filename={{filename}}&code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -1831,6 +2007,11 @@
                   "key": "filename",
                   "value": "{{filename}}",
                   "description": "The filename to delete (all chunks)"
+                },
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
                 }
               ]
             }
@@ -1877,7 +2058,7 @@
               "raw": "{\n    \"document_ids\": [\n        \"{{document_id_1}}\",\n        \"{{document_id_2}}\",\n        \"{{document_id_3}}\"\n    ]\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/search/delete/document",
+              "raw": "{{base_url}}/api/search/delete/document?code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -1886,6 +2067,13 @@
                 "search",
                 "delete",
                 "document"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
+                }
               ]
             }
           }
@@ -1921,7 +2109,7 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/api/search/delete/document/persisted?document_id={{document_id}}&confirm=yes",
+              "raw": "{{base_url}}/api/search/delete/document/persisted?document_id={{document_id}}&confirm=yes&code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -1942,6 +2130,11 @@
                   "key": "confirm",
                   "value": "yes",
                   "description": "Required confirmation for deletion"
+                },
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
                 }
               ]
             }
@@ -1978,7 +2171,7 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/api/search/delete/document/persisted?filename={{filename}}&confirm=yes",
+              "raw": "{{base_url}}/api/search/delete/document/persisted?filename={{filename}}&confirm=yes&code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -1999,6 +2192,11 @@
                   "key": "confirm",
                   "value": "yes",
                   "description": "Required confirmation for deletion"
+                },
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
                 }
               ]
             }
@@ -2054,7 +2252,7 @@
               "raw": "{\n    \"force_recreate\": false\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/search/setup",
+              "raw": "{{base_url}}/api/search/setup?code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -2062,6 +2260,13 @@
                 "api",
                 "search",
                 "setup"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
+                }
               ]
             }
           }
@@ -2110,7 +2315,7 @@
               "raw": "{\n    \"force_recreate\": true\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/search/setup?force_recreate=true",
+              "raw": "{{base_url}}/api/search/setup?force_recreate=true&code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -2124,6 +2329,11 @@
                   "key": "force_recreate",
                   "value": "true",
                   "description": "Force recreation of the index"
+                },
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
                 }
               ]
             }
@@ -2169,7 +2379,7 @@
               "raw": "{\n    \"index_name\": \"custom-test-index\",\n    \"force_recreate\": false\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/search/setup?index_name=custom-test-index",
+              "raw": "{{base_url}}/api/search/setup?index_name=custom-test-index&code={{function_key}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -2183,6 +2393,11 @@
                   "key": "index_name",
                   "value": "custom-test-index",
                   "description": "Custom index name"
+                },
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Azure Function access key"
                 }
               ]
             }
