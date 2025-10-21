@@ -7,8 +7,7 @@ from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import (
     SearchIndex, SimpleField, SearchableField, SearchField,
     SearchFieldDataType, VectorSearch, HnswAlgorithmConfiguration,
-    HnswParameters, VectorSearchProfile, VectorSearchAlgorithmKind,
-    VectorSearchAlgorithmMetric
+    HnswParameters, VectorSearchProfile
 )
 
 # Import configuration
@@ -78,16 +77,14 @@ def create_document_index_if_not_exists(index_name: str = None) -> Dict:
             SimpleField(name="date", type=SearchFieldDataType.String, filterable=True, sortable=True),
         ]
         
-        # Configure vector search
+        # Configure vector search with profiles (current SDK format)
         vector_config = VectorSearch(
             algorithms=[HnswAlgorithmConfiguration(
                 name="vsAlgo",
-                kind=VectorSearchAlgorithmKind.HNSW,
                 parameters=HnswParameters(
                     m=4,
                     ef_construction=400,
-                    ef_search=500,
-                    metric=VectorSearchAlgorithmMetric.COSINE
+                    ef_search=500
                 )
             )],
             profiles=[VectorSearchProfile(
@@ -123,11 +120,13 @@ def create_document_index_if_not_exists(index_name: str = None) -> Dict:
             "index_name": index_name
         }
 
-def create_policy_index_if_not_exists(index_name: str = "legal-instructions") -> Dict:
+def create_policy_index_if_not_exists(index_name: str = None) -> Dict:
     """
     Create the legal instructions/policies index if it doesn't exist
-    Based on the schema from policy_indexing.py
+    Uses AZURE_SEARCH_POLICY_INDEX from configuration
     """
+    if index_name is None:
+        index_name = config.AZURE_SEARCH_POLICY_INDEX
     try:
         client = SearchIndexClient(
             endpoint=config.AZURE_SEARCH_ENDPOINT,
@@ -143,20 +142,20 @@ def create_policy_index_if_not_exists(index_name: str = "legal-instructions") ->
                 "index_name": index_name
             }
         
-        # Define index fields (based on legal-instructions schema)
+        # Define index fields for policy index (with vector search support)
         fields = [
             SimpleField(name="id", type=SearchFieldDataType.String, key=True, sortable=True),
             SimpleField(name="PolicyId", type=SearchFieldDataType.String, filterable=True),
             SimpleField(name="filename", type=SearchFieldDataType.String, filterable=True),
             SearchableField(name="title", type=SearchFieldDataType.String),
-            SearchableField(name="instruction", type=SearchFieldDataType.String),
+            SearchableField(name="instruction", type=SearchFieldDataType.String),  # Main policy content
             SearchableField(name="summary", type=SearchFieldDataType.String),
             SearchField(
-                name="embedding",
+                name="embedding", 
                 type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
-                searchable=True,
-                vector_search_dimensions=1536,
-                vector_search_profile_name="myHnswProfile"
+                searchable=True, 
+                vector_search_dimensions=1536, 
+                vector_search_profile_name="policyVsProfile"
             ),
             SearchField(
                 name="tags",
@@ -169,35 +168,33 @@ def create_policy_index_if_not_exists(index_name: str = "legal-instructions") ->
                 name="groups",
                 type=SearchFieldDataType.Collection(SearchFieldDataType.String),
                 filterable=True
-            ),
+            ),  # Access control
             SimpleField(name="severity", type=SearchFieldDataType.Int32, filterable=True),
             SimpleField(name="language", type=SearchFieldDataType.String, filterable=True),
             SearchableField(name="original_text", type=SearchFieldDataType.String)
         ]
         
-        # Configure vector search
-        vector_search = VectorSearch(
+        # Configure vector search for policies
+        vector_config = VectorSearch(
             algorithms=[HnswAlgorithmConfiguration(
-                name="myHnsw",
-                kind=VectorSearchAlgorithmKind.HNSW,
+                name="policyVsAlgo",
                 parameters=HnswParameters(
-                    m=5,
-                    ef_construction=300,
-                    ef_search=400,
-                    metric=VectorSearchAlgorithmMetric.COSINE
+                    m=4,
+                    ef_construction=400,
+                    ef_search=500
                 )
             )],
             profiles=[VectorSearchProfile(
-                name="myHnswProfile",
-                algorithm_configuration_name="myHnsw"
+                name="policyVsProfile",
+                algorithm_configuration_name="policyVsAlgo"
             )]
         )
         
-        # Create the index
+        # Create the policy index with vector search support
         index = SearchIndex(
             name=index_name,
             fields=fields,
-            vector_search=vector_search
+            vector_search=vector_config
         )
         
         client.create_index(index)

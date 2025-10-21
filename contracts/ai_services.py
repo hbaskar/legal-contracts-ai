@@ -32,18 +32,41 @@ except ImportError as e:
 from config.config import config
 
 # Database imports - using lazy import to avoid circular dependencies
-DatabaseManager = None
+DatabaseManagerClass = None
+_database_manager_instance = None
 
-def get_database_manager():
-    """Lazy import of DatabaseManager to avoid circular dependencies"""
-    global DatabaseManager
-    if DatabaseManager is None:
+def get_database_manager_class():
+    """Get the DatabaseManager class for creating new instances"""
+    global DatabaseManagerClass
+    
+    if DatabaseManagerClass is None:
         try:
-            from config.database import DatabaseManager
+            from config.database import DatabaseManager as DbMgrClass
+            DatabaseManagerClass = DbMgrClass
         except ImportError as e:
             logging.error(f"Missing database manager: {e}")
-            DatabaseManager = None
-    return DatabaseManager
+            return None
+    
+    return DatabaseManagerClass
+
+def get_database_manager():
+    """Lazy import and instantiation of DatabaseManager to avoid circular dependencies"""
+    global _database_manager_instance
+    
+    db_class = get_database_manager_class()
+    if db_class is None:
+        return None
+    
+    # Return cached instance or create new one
+    if _database_manager_instance is None:
+        try:
+            _database_manager_instance = db_class()
+            logging.info("Database manager instance created successfully")
+        except Exception as e:
+            logging.error(f"Failed to create database manager instance: {e}")
+            return None
+    
+    return _database_manager_instance
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -872,6 +895,57 @@ def delete_document_from_index(filename: str) -> Dict:
         return {"status": "error", "message": str(e)}
 
 
+def delete_document_by_content_hash(filename: str, content_hash: str, document_text: str) -> Dict:
+    """Delete documents with the same content hash (same exact content) - smarter deletion"""
+    try:
+        client = get_search_client()
+        
+        # Search for documents with the same filename
+        results = client.search(
+            search_text="*",
+            filter=f"filename eq '{filename}'",
+            select="id,paragraph"
+        )
+        
+        # Find documents with matching content by comparing text similarity
+        documents_to_delete = []
+        import hashlib
+        
+        for doc in results:
+            if 'paragraph' in doc:
+                # Calculate hash of existing document content
+                existing_content_hash = hashlib.sha256(doc['paragraph'].encode('utf-8')).hexdigest()[:16]
+                new_content_hash = hashlib.sha256(document_text.encode('utf-8')).hexdigest()[:16]
+                
+                # Delete if content hashes match (same exact content)
+                if existing_content_hash == new_content_hash:
+                    documents_to_delete.append(doc['id'])
+                    logger.debug(f"Found matching content for deletion: {doc['id']}")
+        
+        if not documents_to_delete:
+            return {
+                "status": "not_found",
+                "message": f"No documents found with same content hash for {filename}"
+            }
+        
+        delete_docs = [{"id": doc_id} for doc_id in documents_to_delete]
+        result = client.delete_documents(delete_docs)
+        
+        successful_deletes = sum(1 for r in result if r.succeeded)
+        
+        logger.info(f"🗑️ Deleted {successful_deletes} documents with matching content, preserved other versions")
+        
+        return {
+            "status": "success",
+            "message": f"Deleted {successful_deletes} chunks with same content for document {filename}",
+            "deleted_chunks": successful_deletes
+        }
+        
+    except Exception as e:
+        logger.error(f"Error deleting document by content hash {filename}: {str(e)}")
+        return {"status": "error", "message": str(e)}
+
+
 def delete_document_by_id(document_id: str) -> Dict:
     """Delete a specific document chunk from the index by document ID"""
     try:
@@ -1146,7 +1220,7 @@ async def process_document_with_ai_keyphrases(file_path: str, filename: str, for
         # Initialize database manager to save chunks locally
         db_mgr = None
         file_id = None
-        DatabaseManagerClass = get_database_manager()
+        DatabaseManagerClass = get_database_manager_class()
         if DatabaseManagerClass:
             try:
                 db_mgr = DatabaseManagerClass()
@@ -1155,7 +1229,6 @@ async def process_document_with_ai_keyphrases(file_path: str, filename: str, for
                 # Try to find existing file by filename or create placeholder
                 # For now, we'll create a placeholder since we don't have the original file metadata
                 from contracts.models import FileMetadata
-                from datetime import datetime, UTC
                 import os
                 
                 placeholder_metadata = FileMetadata(
@@ -1165,7 +1238,7 @@ async def process_document_with_ai_keyphrases(file_path: str, filename: str, for
                     content_type=f"application/{filename.split('.')[-1]}",
                     blob_url=f"processed://{filename}",
                     container_name="processed-documents",
-                    upload_timestamp=datetime.now(UTC),
+                    upload_timestamp=datetime.now(),
                     checksum="processed",
                     user_id="document-processor"
                 )
@@ -1183,6 +1256,10 @@ async def process_document_with_ai_keyphrases(file_path: str, filename: str, for
         logger.info("📄 Extracting content with proper paragraph reconstruction...")
         file_extension = filename.lower().split('.')[-1]
         document_text = process_document_content(file_path, file_extension)
+        
+        # Calculate content hash for intelligent document handling
+        import hashlib
+        document_content_hash = hashlib.sha256(document_text.encode('utf-8')).hexdigest()[:12]  # Short hash for IDs
         
         if not document_text:
             logger.error(f"Content extraction failed for {filename} (extension: {file_extension})")
@@ -1220,6 +1297,9 @@ async def process_document_with_ai_keyphrases(file_path: str, filename: str, for
         documents = []
         chunk_id_mapping = {}  # Map document index to chunk_id
         base_key = sanitize_document_key(filename)
+        
+        # Create a unique processing timestamp for document IDs
+        processing_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]  # Include milliseconds
         
         for i, chunk_text in enumerate(chunks, 1):
             if len(chunk_text.strip()) > 50:  # Only meaningful chunks
@@ -1275,9 +1355,9 @@ async def process_document_with_ai_keyphrases(file_path: str, filename: str, for
                     logger.warning(f"Failed to generate AI title: {e}")
                     title = f"Section {i}"
                 
-                # Create document for indexing
+                # Create document for indexing with unique timestamp and content-based ID
                 document = {
-                    "id": f"{base_key}_{i}",
+                    "id": f"{base_key}_{document_content_hash}_{i}",
                     "title": title,
                     "paragraph": chunk_text.strip(),
                     "summary": summary,
@@ -1323,12 +1403,39 @@ async def process_document_with_ai_keyphrases(file_path: str, filename: str, for
             saved_chunks = await db_mgr.get_document_chunks(file_id, chunking_method)
             logger.info(f"💾 Saved {len(saved_chunks)} chunks to local SQLite database")
         
-        # Step 3: Handle reindexing
+        # Step 3: Handle existing documents intelligently
+        existing_docs_count = 0
+        
         if force_reindex:
-            logger.info("🗑️ Removing existing documents...")
-            delete_result = delete_document_from_index(filename)
+            logger.info(f"🗑️ Force reindex requested - removing documents with same content (hash: {document_content_hash})...")
+            
+            delete_result = delete_document_by_content_hash(filename, document_content_hash, document_text)
             if delete_result['status'] == 'success':
-                logger.info(f"✅ Removed {delete_result['deleted_chunks']} existing chunks")
+                logger.info(f"✅ Removed {delete_result['deleted_chunks']} existing chunks with same content")
+            elif delete_result['status'] == 'not_found':
+                logger.info(f"📝 No existing documents found with same content")
+            else:
+                logger.warning(f"⚠️ Failed to delete existing documents: {delete_result.get('message', 'Unknown error')}")
+        else:
+            # Check if documents already exist for this filename
+            try:
+                client = get_search_client()
+                existing_results = client.search(
+                    search_text="*",
+                    filter=f"filename eq '{filename}'",
+                    select="id",
+                    top=1
+                )
+                existing_docs = list(existing_results)
+                existing_docs_count = len(existing_docs)
+                
+                if existing_docs_count > 0:
+                    logger.info(f"📋 Found existing documents for {filename} - will add new chunks alongside existing ones")
+                else:
+                    logger.info(f"📝 No existing documents found for {filename} - this is a new document")
+                    
+            except Exception as e:
+                logger.warning(f"⚠️ Could not check for existing documents: {str(e)} - proceeding with upload")
         
         # Step 4: Ensure Azure Search index exists before uploading
         logger.info("🔍 Ensuring Azure Search index exists...")
@@ -1413,9 +1520,17 @@ async def process_document_with_ai_keyphrases(file_path: str, filename: str, for
                 "error": None if (upload_result and upload_result.succeeded) else str(getattr(upload_result, 'error_message', 'Upload failed'))
             })
         
+        # Create informative message about document processing
+        if force_reindex:
+            process_message = f"Successfully processed {filename} with {chunking_method} chunking (replaced existing documents)"
+        elif existing_docs_count > 0:
+            process_message = f"Successfully processed {filename} with {chunking_method} chunking (added to existing documents)"
+        else:
+            process_message = f"Successfully processed {filename} with {chunking_method} chunking (new document)"
+
         return {
             "status": "success",
-            "message": f"Successfully processed {filename} with {chunking_method} chunking",
+            "message": process_message,
             "filename": filename,
             "chunks_created": len(documents),
             "successful_uploads": successful_uploads,
@@ -1423,7 +1538,9 @@ async def process_document_with_ai_keyphrases(file_path: str, filename: str, for
             "enhancement": enhancement_type,
             "chunking_method": chunk_method_used,
             "chunk_details": chunk_details,
-            "content_validation": validation_metrics
+            "content_validation": validation_metrics,
+            "existing_documents_found": existing_docs_count if not force_reindex else 0,
+            "force_reindex": force_reindex
         }
         
     except Exception as e:

@@ -1,0 +1,16 @@
+Contract Policy Document - Employee Data Protection
+
+POLICY 1: DATA COLLECTION REQUIREMENTS
+All employee personal data must be collected with explicit consent and documented approval from HR department. This includes but is not limited to social security numbers, addresses, and emergency contact information.
+
+POLICY 2: DATA ACCESS RESTRICTIONS  
+Access to employee personal data is restricted to authorized personnel only. Managers may only access data for their direct reports and HR staff may access all employee data for legitimate business purposes.
+
+POLICY 3: DATA RETENTION REQUIREMENTS
+Employee personal data must be retained for a minimum of 7 years after employment termination as required by federal regulations. Data older than 10 years must be archived or securely destroyed.
+
+POLICY 4: BREACH NOTIFICATION PROCEDURES
+Any suspected data breach involving employee information must be reported to the IT Security team within 2 hours of discovery. The Privacy Officer must be notified within 4 hours for assessment and potential regulatory reporting.
+
+POLICY 5: THIRD-PARTY DATA SHARING
+Employee data may only be shared with third-party vendors who have signed appropriate data processing agreements and maintain equivalent security standards. All sharing must be approved by Legal and Privacy teams.

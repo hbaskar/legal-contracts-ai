@@ -1,0 +1,1148 @@
+{
+  "info": {
+    "_postman_id": "fresh-start-api-2024",
+    "name": "Fresh Start API",
+    "description": "Complete API collection for the Fresh Start document processing Azure Functions app. Includes endpoints for file upload, document processing with intelligent force reindex, policy processing (supports both JSON with base64 content and multipart file uploads), health checks, Azure Search operations, database persistence verification, database synchronization validation, and comprehensive admin operations for system management.\n\n**Setup Instructions:**\n1. Set 'base_url' variable to 'http://localhost:7071' for local development\n2. Leave 'function_key' variable empty for local development\n3. For production deployment, set 'function_key' to your Azure Functions access key\n4. Ensure Azure Functions host is running with 'func start' command\n5. Verify OpenAI and Azure Search services are properly configured",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health & Status",
+      "item": [
+        {
+          "name": "Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has required fields\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "    pm.expect(jsonData).to.have.property('timestamp');",
+                  "    pm.expect(jsonData).to.have.property('version');",
+                  "    pm.expect(jsonData).to.have.property('environment');",
+                  "    pm.expect(jsonData).to.have.property('checks');",
+                  "});",
+                  "",
+                  "pm.test(\"System status is healthy\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql('healthy');",
+                  "});",
+                  "",
+                  "pm.test(\"Database and storage checks passed\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.checks) {",
+                  "        pm.expect(jsonData.checks.database.status).to.eql('healthy');",
+                  "        pm.expect(jsonData.checks.blob_storage.status).to.eql('healthy');",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test(\"Environment configuration present\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.environment).to.have.property('database_type');",
+                  "    pm.expect(jsonData.environment).to.have.property('openai_configured');",
+                  "    pm.expect(jsonData.environment).to.have.property('search_configured');",
+                  "});",
+                  "",
+                  "pm.test(\"Services are properly configured\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.environment.openai_configured).to.be.true;",
+                  "    pm.expect(jsonData.environment.search_configured).to.be.true;",
+                  "});",
+                  "",
+                  "// Log health status for debugging",
+                  "const responseJson = pm.response.json();",
+                  "console.log('Health Status:', responseJson.status);",
+                  "console.log('Database Type:', responseJson.environment.database_type);",
+                  "console.log('OpenAI Configured:', responseJson.environment.openai_configured);",
+                  "console.log('Search Configured:', responseJson.environment.search_configured);",
+                  "console.log('Database Health:', responseJson.checks.database.status);",
+                  "console.log('Storage Health:', responseJson.checks.blob_storage.status);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Document Processing Health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Document processing function is healthy\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status', 'healthy');",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message).to.include('Document Processing Function');",
+                  "});",
+                  "",
+                  "pm.test(\"AI services status reported\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('ai_services_available');",
+                  "    pm.expect(jsonData).to.have.property('version');",
+                  "    pm.expect(jsonData).to.have.property('environment');",
+                  "});",
+                  "",
+                  "// Log AI services status for debugging",
+                  "const responseJson = pm.response.json();",
+                  "console.log('AI Services Available:', responseJson.ai_services_available);",
+                  "console.log('Environment Info:', responseJson.environment);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/process_document?code={{function_key}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "process_document"],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "File Management",
+      "item": [
+        {
+          "name": "Upload File",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"File uploaded successfully\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success', true);",
+                  "    pm.expect(jsonData).to.have.property('file_id');",
+                  "    pm.collectionVariables.set('last_file_id', jsonData.file_id);",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains file metadata\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('filename');",
+                  "    pm.expect(jsonData).to.have.property('content_type');",
+                  "    pm.expect(jsonData).to.have.property('size_bytes');",
+                  "    pm.expect(jsonData.size_bytes).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"Blob storage upload confirmed\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('blob_url');",
+                  "    pm.expect(jsonData).to.have.property('download_url');",
+                  "});",
+                  "",
+                  "// Log upload details for debugging",
+                  "const responseJson = pm.response.json();",
+                  "if (responseJson.success) {",
+                  "    console.log('File ID:', responseJson.file_id);",
+                  "    console.log('Filename:', responseJson.filename);",
+                  "    console.log('Size:', responseJson.size_bytes, 'bytes');",
+                  "    console.log('Content Type:', responseJson.content_type);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Select a file to upload (txt, docx, pdf, etc.)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/upload?code={{function_key}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "upload"],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Document Processing",
+      "item": [
+        {
+          "name": "Process Document",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Sample document content for testing",
+                  "const sampleContent = `Sample Document Content",
+                  "",
+                  "This is a test document for processing. It contains multiple paragraphs to demonstrate the chunking and processing capabilities.",
+                  "",
+                  "Section 1: Introduction",
+                  "This section introduces the document processing system.",
+                  "",
+                  "Section 2: Features",
+                  "The system supports intelligent chunking, AI analysis, and Azure Search integration.",
+                  "",
+                  "Parameters:",
+                  "- force_reindex: false = preserve existing documents with same filename (default)",
+                  "- force_reindex: true = delete existing documents with same filename before processing`;",
+                  "",
+                  "const base64Content = btoa(sampleContent);",
+                  "pm.collectionVariables.set('sample_base64_content', base64Content);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Document processed successfully\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status', 'success');",
+                  "    pm.expect(jsonData).to.have.property('chunks_created');",
+                  "    pm.expect(jsonData.chunks_created).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"Azure Search upload successful\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.azure_search) {",
+                  "        pm.expect(jsonData.azure_search).to.have.property('uploaded_count');",
+                  "        pm.expect(jsonData.azure_search.uploaded_count).to.equal(jsonData.chunks_created);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file_content\": \"{{sample_base64_content}}\",\n  \"filename\": \"sample_document.txt\",\n  \"chunking_method\": \"paragraph\",\n  \"force_reindex\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/process_document?code={{function_key}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "process_document"],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Policy Processing",
+      "item": [
+        {
+          "name": "Policy Processing Health Check",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check environment setup",
+                  "const baseUrl = pm.collectionVariables.get('base_url');",
+                  "const functionKey = pm.collectionVariables.get('function_key');",
+                  "",
+                  "console.log('Base URL:', baseUrl);",
+                  "console.log('Function Key:', functionKey ? 'Set (length: ' + functionKey.length + ')' : 'Not set');",
+                  "",
+                  "if (!baseUrl) {",
+                  "    console.warn('Base URL is not set - using default localhost:7071');",
+                  "    pm.collectionVariables.set('base_url', 'http://localhost:7071');",
+                  "}",
+                  "",
+                  "if (!functionKey) {",
+                  "    console.log('Function key is empty - this is normal for local development');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response is valid JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "pm.test(\"Policy processing function is healthy\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status', 'healthy');",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message).to.include('Policy Processing Function');",
+                  "});",
+                  "",
+                  "pm.test(\"Policy services status and features reported\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('policy_services_available');",
+                  "    pm.expect(jsonData).to.have.property('supported_file_types');",
+                  "    pm.expect(jsonData).to.have.property('features');",
+                  "    pm.expect(jsonData.features).to.be.an('array');",
+                  "    pm.expect(jsonData.features.length).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"Upload methods supported\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('supported_upload_methods');",
+                  "    pm.expect(jsonData.supported_upload_methods).to.be.an('array');",
+                  "    pm.expect(jsonData.supported_upload_methods).to.include('JSON with base64 content');",
+                  "    pm.expect(jsonData.supported_upload_methods).to.include('Multipart form data file upload');",
+                  "});",
+                  "",
+                  "// Log policy services status for debugging",
+                  "const responseJson = pm.response.json();",
+                  "console.log('Policy Services Available:', responseJson.policy_services_available);",
+                  "console.log('Supported File Types:', responseJson.supported_file_types);",
+                  "console.log('Supported Upload Methods:', responseJson.supported_upload_methods);",
+                  "console.log('Features:', responseJson.features);",
+                  "",
+                  "// Set up environment for subsequent tests",
+                  "if (responseJson.policy_services_available === true) {",
+                  "    pm.collectionVariables.set('policy_services_ready', 'true');",
+                  "    console.log('✅ Policy services are ready for testing');",
+                  "} else {",
+                  "    pm.collectionVariables.set('policy_services_ready', 'false');",
+                  "    console.warn('⚠️ Policy services are not available - subsequent policy tests may fail');",
+                  "    console.warn('Check OpenAI and Azure Search configuration');",
+                  "}",
+                  "",
+                  "// Additional troubleshooting information",
+                  "if (pm.response.code !== 200) {",
+                  "    console.error('Health check failed with status:', pm.response.code);",
+                  "    console.error('Response:', pm.response.text());",
+                  "    console.log('Troubleshooting steps:');",
+                  "    console.log('1. Ensure Azure Functions host is running (func start)');",
+                  "    console.log('2. Check base_url variable is set to http://localhost:7071');",
+                  "    console.log('3. For production, ensure function_key variable is set');",
+                  "    console.log('4. Verify OpenAI and Azure Search services are configured');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/process_policy?code={{function_key}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "process_policy"],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}",
+                  "description": "Function key (leave empty for local development)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Policy File",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Policy file upload and processing successful\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status', 'success');",
+                  "    pm.expect(jsonData).to.have.property('clauses_processed');",
+                  "    pm.expect(jsonData.clauses_processed).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"File processing pipeline integrity\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.clauses_processed).to.equal(jsonData.total_clauses);",
+                  "    if (jsonData.search_upload) {",
+                  "        pm.expect(jsonData.search_upload.uploaded_count).to.equal(jsonData.clauses_processed);",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test(\"Database persistence for uploaded file successful\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.database_storage) {",
+                  "        pm.expect(jsonData.database_storage).to.have.property('file_id');",
+                  "        pm.expect(jsonData.database_storage.file_id).to.be.above(0);",
+                  "        pm.expect(jsonData.database_storage).to.have.property('chunk_persistence', 'completed');",
+                  "        pm.expect(jsonData.database_storage).to.have.property('azure_search_persistence', 'completed');",
+                  "        pm.collectionVariables.set('last_uploaded_policy_file_id', jsonData.database_storage.file_id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Select a policy file to upload (PDF, DOCX, or TXT)"
+                },
+                {
+                  "key": "policy_id",
+                  "value": "uploaded_policy_{{$timestamp}}",
+                  "type": "text",
+                  "description": "Optional custom policy ID"
+                },
+                {
+                  "key": "groups",
+                  "value": "legal-team,compliance,security",
+                  "type": "text",
+                  "description": "Comma-separated list of access groups"
+                },
+                {
+                  "key": "upload_to_search",
+                  "value": "true",
+                  "type": "text",
+                  "description": "Whether to upload processed content to Azure Search"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/process_policy?code={{function_key}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "process_policy"],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Process Policy Document",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Sample policy content for testing",
+                  "const policyContent = `SAMPLE POLICY DOCUMENT",
+                  "",
+                  "1. Data Protection Policy",
+                  "All customer data must be encrypted at rest and in transit using industry-standard encryption protocols.",
+                  "",
+                  "2. Access Control Requirements",
+                  "System access requires multi-factor authentication and role-based permissions verification.",
+                  "",
+                  "3. Audit and Compliance",
+                  "All system activities must be logged with timestamps and user identification for compliance tracking.`;",
+                  "",
+                  "const base64Content = btoa(policyContent);",
+                  "pm.collectionVariables.set('sample_policy_base64_content', base64Content);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Policy processing successful\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status', 'success');",
+                  "    pm.expect(jsonData).to.have.property('clauses_processed');",
+                  "    pm.expect(jsonData.clauses_processed).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test(\"Database persistence successful\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.database_storage) {",
+                  "        pm.expect(jsonData.database_storage).to.have.property('file_id');",
+                  "        pm.expect(jsonData.database_storage.file_id).to.be.above(0);",
+                  "        pm.expect(jsonData.database_storage).to.have.property('chunk_persistence', 'completed');",
+                  "        pm.expect(jsonData.database_storage).to.have.property('azure_search_persistence', 'completed');",
+                  "        pm.collectionVariables.set('last_policy_file_id', jsonData.database_storage.file_id);",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test(\"Processing pipeline integrity\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.clauses_processed).to.equal(jsonData.total_clauses);",
+                  "    if (jsonData.search_upload) {",
+                  "        pm.expect(jsonData.search_upload.uploaded_count).to.equal(jsonData.clauses_processed);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"policy_id\": \"sample_policy_{{$timestamp}}\",\n  \"file_content\": \"{{sample_policy_base64_content}}\",\n  \"filename\": \"sample_policy.txt\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/process_policy?code={{function_key}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "process_policy"],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Azure Search Operations",
+      "item": [
+        {
+          "name": "Get Search Documents",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Documents retrieved successfully\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status', 'success');",
+                  "    pm.expect(jsonData).to.have.property('documents');",
+                  "    pm.expect(jsonData.documents).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test(\"Document structure is valid\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.documents && jsonData.documents.length > 0) {",
+                  "        const doc = jsonData.documents[0];",
+                  "        pm.expect(doc).to.have.property('id');",
+                  "        pm.expect(doc).to.have.property('paragraph');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/documents?code={{function_key}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "documents"],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Operations",
+      "item": [
+        {
+          "name": "Setup Azure Search Index",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Index setup successful\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status', 'success');",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/setup?code={{function_key}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "setup"],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Validate Database-Search Sync",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Database-Search sync validation completed\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "    pm.expect(jsonData).to.have.property('validation_summary');",
+                  "    pm.expect(jsonData).to.have.property('sync_percentage');",
+                  "    pm.expect(jsonData).to.have.property('database_chunks');",
+                  "});",
+                  "",
+                  "pm.test(\"Validation summary contains required metrics\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const summary = jsonData.validation_summary;",
+                  "    pm.expect(summary).to.have.property('total_database_chunks');",
+                  "    pm.expect(summary).to.have.property('chunks_with_search_records');",
+                  "    pm.expect(summary).to.have.property('chunks_missing_search_records');",
+                  "    pm.expect(summary).to.have.property('search_records_validated');",
+                  "});",
+                  "",
+                  "pm.test(\"Sync percentage is valid\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.sync_percentage).to.be.a('number');",
+                  "    pm.expect(jsonData.sync_percentage).to.be.within(0, 100);",
+                  "});",
+                  "",
+                  "pm.test(\"Database chunks array structure is valid\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.database_chunks).to.be.an('array');",
+                  "    if (jsonData.database_chunks.length > 0) {",
+                  "        const chunk = jsonData.database_chunks[0];",
+                  "        pm.expect(chunk).to.have.property('chunk_id');",
+                  "        pm.expect(chunk).to.have.property('file_id');",
+                  "        pm.expect(chunk).to.have.property('has_search_record');",
+                  "        pm.expect(chunk).to.have.property('validation_status');",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test(\"Recommendations provided when applicable\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('recommendations');",
+                  "    pm.expect(jsonData.recommendations).to.be.an('array');",
+                  "});",
+                  "",
+                  "// Log sync validation results for debugging",
+                  "const responseJson = pm.response.json();",
+                  "console.log('Validation Status:', responseJson.status);",
+                  "console.log('Sync Percentage:', responseJson.sync_percentage + '%');",
+                  "console.log('Total Database Chunks:', responseJson.validation_summary.total_database_chunks);",
+                  "console.log('Chunks with Search Records:', responseJson.validation_summary.chunks_with_search_records);",
+                  "console.log('Missing Search Records:', responseJson.validation_summary.chunks_missing_search_records);",
+                  "if (responseJson.recommendations.length > 0) {",
+                  "    console.log('Recommendations:', responseJson.recommendations);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/database/validate-search-sync?code={{function_key}}&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "database", "validate-search-sync"],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Optional: Limit number of chunks to validate (default: 50)"
+                },
+                {
+                  "key": "file_id",
+                  "value": "",
+                  "description": "Optional: Validate specific file ID only",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Database Sync Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Database sync check completed\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "    pm.expect(jsonData).to.have.property('current_database_type');",
+                  "    pm.expect(jsonData).to.have.property('checks');",
+                  "    pm.expect(jsonData).to.have.property('summary');",
+                  "});",
+                  "",
+                  "pm.test(\"Database connectivity check passed\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.checks && jsonData.checks.connectivity) {",
+                  "        pm.expect(jsonData.checks.connectivity.status).to.eql('passed');",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test(\"Schema validation results present\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('schema_validation');",
+                  "    pm.expect(jsonData.schema_validation).to.have.property('file_metadata');",
+                  "    pm.expect(jsonData.schema_validation).to.have.property('document_chunks');",
+                  "    pm.expect(jsonData.schema_validation).to.have.property('azure_search_chunks');",
+                  "});",
+                  "",
+                  "pm.test(\"ID generation test results present\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id_generation');",
+                  "});",
+                  "",
+                  "pm.test(\"Content hashing consistency validated\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.checks && jsonData.checks.content_hashing) {",
+                  "        pm.expect(jsonData.checks.content_hashing.status).to.be.oneOf(['passed', 'failed', 'error']);",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test(\"Sync check summary valid\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.summary).to.have.property('total_checks');",
+                  "    pm.expect(jsonData.summary).to.have.property('passed_checks');",
+                  "    pm.expect(jsonData.summary).to.have.property('failed_checks');",
+                  "    pm.expect(jsonData.summary.total_checks).to.be.above(0);",
+                  "});",
+                  "",
+                  "// Log sync check results for debugging",
+                  "const responseJson = pm.response.json();",
+                  "console.log('Database Type:', responseJson.current_database_type);",
+                  "console.log('Overall Status:', responseJson.status);",
+                  "console.log('Total Checks:', responseJson.summary.total_checks);",
+                  "console.log('Passed Checks:', responseJson.summary.passed_checks);",
+                  "console.log('Failed Checks:', responseJson.summary.failed_checks);",
+                  "if (responseJson.recommendations) {",
+                  "    console.log('Recommendations:', responseJson.recommendations);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/database/sync-check?code={{function_key}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "database", "sync-check"],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Database",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Database reset successful\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status', 'success');",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message).to.include('reset');",
+                  "});",
+                  "",
+                  "pm.test(\"Reset confirmation acknowledged\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.details) {",
+                  "        pm.expect(jsonData.details).to.have.property('tables_reset');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"confirm\": \"yes\",\n  \"action\": \"reset_database\",\n  \"warning_acknowledged\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/database/reset?code={{function_key}}&confirm=yes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "database", "reset"],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}"
+                },
+                {
+                  "key": "confirm",
+                  "value": "yes",
+                  "description": "Confirmation parameter to proceed with database reset"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Azure Search Index",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Azure Search index reset successful\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status', 'success');",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message).to.include('reset');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"confirm\": \"yes\",\n  \"action\": \"reset_search_index\",\n  \"warning_acknowledged\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/search/reset?code={{function_key}}&confirm=yes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "reset"],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}"
+                },
+                {
+                  "key": "confirm",
+                  "value": "yes",
+                  "description": "Confirmation parameter to proceed with Azure Search index reset"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Storage Files",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Storage reset successful\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status', 'success');",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message).to.include('reset');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"confirm\": \"yes\",\n  \"action\": \"reset_storage\",\n  \"warning_acknowledged\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/storage/reset?code={{function_key}}&confirm=yes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "storage", "reset"],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}"
+                },
+                {
+                  "key": "confirm",
+                  "value": "yes",
+                  "description": "Confirmation parameter to proceed with storage reset"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Complete System Reset",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"System reset successful\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status', 'success');",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message).to.include('reset');",
+                  "});",
+                  "",
+                  "pm.test(\"All components reset confirmed\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.details) {",
+                  "        pm.expect(jsonData.details).to.have.property('database_reset');",
+                  "        pm.expect(jsonData.details).to.have.property('search_reset');",
+                  "        pm.expect(jsonData.details).to.have.property('storage_reset');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"confirm\": \"yes\",\n  \"action\": \"reset_all_systems\",\n  \"warning_acknowledged\": true,\n  \"danger_acknowledged\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/system/reset?code={{function_key}}&confirm=yes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "system", "reset"],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{function_key}}"
+                },
+                {
+                  "key": "confirm",
+                  "value": "yes",
+                  "description": "Confirmation parameter to proceed with complete system reset"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:7071",
+      "type": "string",
+      "description": "Base URL for the Azure Functions app"
+    },
+    {
+      "key": "function_key",
+      "value": "",
+      "type": "string",
+      "description": "Azure Functions access key"
+    },
+    {
+      "key": "sample_base64_content",
+      "value": "",
+      "type": "string",
+      "description": "Base64 encoded sample document content for testing"
+    },
+    {
+      "key": "sample_policy_base64_content",
+      "value": "",
+      "type": "string",
+      "description": "Base64 encoded sample policy content for testing"
+    },
+    {
+      "key": "last_file_id",
+      "value": "",
+      "type": "string",
+      "description": "ID of the last uploaded file"
+    },
+    {
+      "key": "last_policy_file_id",
+      "value": "",
+      "type": "string",
+      "description": "Database file ID of the last processed policy document"
+    },
+    {
+      "key": "last_uploaded_policy_file_id",
+      "value": "",
+      "type": "string",
+      "description": "Database file ID of the last uploaded policy file"
+    },
+    {
+      "key": "policy_services_ready",
+      "value": "",
+      "type": "string",
+      "description": "Indicates if policy services are available (set by health check)"
+    }
+  ]
+}
