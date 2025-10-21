@@ -1,7 +1,7 @@
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'config')))
-from config import config
+from config.config import config
 
 from reportlab.lib.pagesizes import LETTER
 from reportlab.lib.units import inch

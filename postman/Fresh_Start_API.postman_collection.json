@@ -7,10 +7,10 @@
   },
   "item": [
     {
-      "name": "Contract Reconstruction",
+      "name": "PDF Operations",
       "item": [
         {
-          "name": "Reconstruct Contract PDF",
+          "name": "Regenerate PDF",
           "event": [
             {
               "listen": "test",
@@ -19,11 +19,10 @@
                   "pm.test(\"Status code is 200\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test(\"PDF created and stored\", function () {",
+                  "pm.test(\"PDF regenerated and uploaded\", function () {",
                   "    const jsonData = pm.response.json();",
                   "    pm.expect(jsonData).to.have.property('success', true);",
-                  "    pm.expect(jsonData).to.have.property('filename');",
-                  "    pm.expect(jsonData.message).to.include('PDF created');",
+                  "    pm.expect(jsonData.message).to.include('PDF regenerated');",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -41,7 +40,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"document_id\": \"employee.pdf\"\n}",
+              "raw": "{\n  \"filename\": \"your_file.docx\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -49,11 +48,11 @@
               }
             },
             "url": {
-              "raw": "{{base_url}}/api/reconstruct/pdf",
+              "raw": "{{base_url}}/api/pdf/regenerate",
               "host": ["{{base_url}}"],
-              "path": ["api", "reconstruct", "pdf"]
+              "path": ["api", "pdf", "regenerate"]
             },
-            "description": "Reconstructs a contract from its chunks in Azure Search, generates a PDF with paragraph headings, and stores it in the contracts-recreate container. Set document_id to the contract you want to reconstruct."
+            "description": "Regenerates a PDF from Azure Search chunks and uploads it to blob storage. Set filename to the document you want to regenerate."
           },
           "response": []
         }

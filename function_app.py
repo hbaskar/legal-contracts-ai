@@ -198,7 +198,6 @@ async def upload_file(req: func.HttpRequest) -> func.HttpResponse:
             mimetype="application/json"
         )
 
-
 @app.function_name(name="GetFileInfo")
 @app.route(route="files/{file_id}", methods=["GET"])
 async def get_file_info(req: func.HttpRequest) -> func.HttpResponse:
@@ -298,7 +297,6 @@ async def health_check(req: func.HttpRequest) -> func.HttpResponse:
             "environment": config.get_environment_info(),
             "checks": {}
         }
-        
         # Check database connectivity
         try:
             db_mgr = await get_db_manager()
@@ -1217,28 +1215,26 @@ async def validate_database_search_sync(req: func.HttpRequest) -> func.HttpRespo
             sync_percentage = (
                 validation_results["validation_summary"]["chunks_with_search_records"] / 
                 validation_results["validation_summary"]["total_database_chunks"]
-            ) * 100
-            validation_results["sync_percentage"] = round(sync_percentage, 2)
-        else:
-            validation_results["sync_percentage"] = 100.0
-        
-        # Determine overall validation status
-        if validation_results["validation_summary"]["chunks_missing_search_records"] > 0:
-            validation_results["status"] = "partial_sync"
-            validation_results["recommendations"].append(
-                f"{validation_results['validation_summary']['chunks_missing_search_records']} chunks are missing Azure Search records"
             )
-        
-        if validation_results["validation_summary"]["search_records_with_errors"] > 0:
-            validation_results["status"] = "degraded"
-            validation_results["recommendations"].append(
-                f"{validation_results['validation_summary']['search_records_with_errors']} chunks had validation errors"
-            )
-        
-        if validation_results["sync_percentage"] == 100.0:
-            validation_results["recommendations"].append("All database chunks have corresponding Azure Search records")
-        elif validation_results["sync_percentage"] >= 90.0:
-            validation_results["recommendations"].append("Database and Azure Search are mostly synchronized")
+            try:
+                from azure.search.documents.indexes import SearchIndexClient
+                from azure.core.credentials import AzureKeyCredential
+                from config.config import config
+
+                client = SearchIndexClient(
+                    endpoint=config.AZURE_SEARCH_ENDPOINT,
+                    credential=AzureKeyCredential(config.AZURE_SEARCH_KEY)
+                )
+
+                target_index = index_name or config.AZURE_SEARCH_DOC_INDEX
+
+                try:
+                    client.delete_index(target_index)
+                    logger.info(f"✅ Deleted existing index: {target_index}")
+                except Exception as e:
+                    logger.info(f"ℹ️ Index {target_index} was not found or already deleted: {e}")
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to delete existing index: {e}")
         else:
             validation_results["status"] = "degraded"
             validation_results["recommendations"].append("Significant synchronization issues detected - consider re-processing documents")
@@ -1792,7 +1788,7 @@ async def setup_azure_search_index(req: func.HttpRequest) -> func.HttpResponse:
         # Parse request parameters
         force_recreate = req.params.get('force_recreate', '').lower() == 'true'
         index_name = req.params.get('index_name')  # Optional custom index name
-        
+
         # Try to get JSON body for additional parameters
         try:
             req_body = req.get_json()
@@ -1801,7 +1797,7 @@ async def setup_azure_search_index(req: func.HttpRequest) -> func.HttpResponse:
                 index_name = req_body.get('index_name', index_name)
         except ValueError:
             pass  # No JSON body or invalid JSON
-        
+
         # Import index creation functions
         try:
             from contracts.index_creation import ensure_search_index_exists, create_document_index_if_not_exists
@@ -1816,7 +1812,7 @@ async def setup_azure_search_index(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=503,
                 mimetype="application/json"
             )
-        
+
         # If force recreate is requested, delete existing index first
         if force_recreate:
             logger.info("🗑️ Force recreate requested - deleting existing index")
@@ -1824,62 +1820,24 @@ async def setup_azure_search_index(req: func.HttpRequest) -> func.HttpResponse:
                 from azure.search.documents.indexes import SearchIndexClient
                 from azure.core.credentials import AzureKeyCredential
                 from config.config import config
-                
+
                 client = SearchIndexClient(
                     endpoint=config.AZURE_SEARCH_ENDPOINT,
                     credential=AzureKeyCredential(config.AZURE_SEARCH_KEY)
                 )
-                
+
                 target_index = index_name or config.AZURE_SEARCH_DOC_INDEX
-                
+
                 try:
                     client.delete_index(target_index)
                     logger.info(f"✅ Deleted existing index: {target_index}")
                 except Exception as e:
                     logger.info(f"ℹ️ Index {target_index} was not found or already deleted: {e}")
-                
             except Exception as e:
                 logger.warning(f"⚠️ Failed to delete existing index: {e}")
-        
-        # Create or ensure the index exists
-        logger.info("🏗️ Starting Azure Search index setup operation")
-        
-        if index_name:
-            # Create specific index with custom name
-            setup_results = create_document_index_if_not_exists(index_name)
-        else:
-            # Use the comprehensive ensure function
-            setup_results = ensure_search_index_exists()
-        
-        # Prepare response
-        response_data = {
-            "status": setup_results["status"],
-            "message": setup_results["message"],
-            "index_name": setup_results.get("index_name"),
-            "operation": setup_results.get("operation", "setup_index"),
-            "fields_count": setup_results.get("fields_count"),
-            "ready": setup_results.get("ready", setup_results["status"] in ["created", "exists"]),
-            "force_recreate": force_recreate,
-            "timestamp": datetime.now(UTC).isoformat()
-        }
-        
-        # Determine status code
-        if setup_results["status"] in ["created", "exists"]:
-            status_code = 200 if setup_results["status"] == "exists" else 201
-        else:
-            status_code = 500
-        
-        logger.info(f"🎉 Azure Search index setup completed: {response_data['message']}")
-        
-        return func.HttpResponse(
-            json.dumps(response_data),
-            status_code=status_code,
-            mimetype="application/json"
-        )
-        
+
+        # ...existing code...
     except Exception as e:
-        logger.error(f"❌ Azure Search index setup failed: {str(e)}", exc_info=True)
-        
         return func.HttpResponse(
             json.dumps({
                 "status": "error",
@@ -2206,6 +2164,7 @@ async def process_policy_document_function(req: func.HttpRequest) -> func.HttpRe
             status_code=500
         )
 
+
 @app.function_name(name="SearchPolicies")
 @app.route(route="search/policies", methods=["GET"])
 async def search_policies_function(req: func.HttpRequest) -> func.HttpResponse:
@@ -2339,6 +2298,7 @@ async def search_policies_function(req: func.HttpRequest) -> func.HttpResponse:
             mimetype="application/json",
             status_code=500
         )
+
 
 @app.function_name(name="ResetSystem")
 @app.route(route="system/reset", methods=["POST", "DELETE"])
@@ -2911,4 +2871,47 @@ def test_index_cleanup(req: func.HttpRequest) -> func.HttpResponse:
             }),
             mimetype="application/json",
             status_code=500
+        )
+
+# Endpoint to regenerate PDF from Azure Search chunks
+@app.function_name(name="RegeneratePDF")
+@app.route(route="pdf/regenerate", methods=["POST"])
+async def regenerate_pdf_endpoint(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Regenerate a PDF from Azure Search chunks and upload to blob storage.
+    Request body: { "filename": "your_file.docx" }
+    """
+    import importlib.util
+    import os
+    import json
+
+    try:
+        req_body = req.get_json()
+        filename = req_body.get("filename")
+        if not filename:
+            return func.HttpResponse(
+                json.dumps({"success": False, "message": "Missing filename"}),
+                status_code=400,
+                mimetype="application/json"
+            )
+
+        # Dynamically import scripts/regenerate_pdf.py
+        script_path = os.path.join(os.path.dirname(__file__), "scripts", "regenerate_pdf.py")
+        spec = importlib.util.spec_from_file_location("regenerate_pdf", script_path)
+        regen_pdf = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(regen_pdf)
+
+        # Call the regenerate_pdf function
+        regen_pdf.regenerate_pdf(filename)
+
+        return func.HttpResponse(
+            json.dumps({"success": True, "message": f"PDF regenerated and uploaded for {filename}"}),
+            status_code=200,
+            mimetype="application/json"
+        )
+    except Exception as e:
+        return func.HttpResponse(
+            json.dumps({"success": False, "message": str(e)}),
+            status_code=500,
+            mimetype="application/json"
         )
