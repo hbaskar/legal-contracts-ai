@@ -7,6 +7,59 @@
   },
   "item": [
     {
+      "name": "Contract Reconstruction",
+      "item": [
+        {
+          "name": "Reconstruct Contract PDF",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"PDF created and stored\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success', true);",
+                  "    pm.expect(jsonData).to.have.property('filename');",
+                  "    pm.expect(jsonData.message).to.include('PDF created');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"document_id\": \"employee.pdf\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reconstruct/pdf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reconstruct", "pdf"]
+            },
+            "description": "Reconstructs a contract from its chunks in Azure Search, generates a PDF with paragraph headings, and stores it in the contracts-recreate container. Set document_id to the contract you want to reconstruct."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Health & Status",
       "item": [
         {
@@ -1089,6 +1142,216 @@
                 }
               ]
             }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Blob Storage Operations",
+      "item": [
+        {
+          "name": "Delete Blob File (Query Params)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 or 404\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has required fields\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    ",
+                  "    if (pm.response.code === 200) {",
+                  "        pm.expect(jsonData).to.have.property('status', 'success');",
+                  "        pm.expect(jsonData).to.have.property('container');",
+                  "        pm.expect(jsonData).to.have.property('blob_name');",
+                  "        pm.expect(jsonData).to.have.property('deleted_at');",
+                  "        pm.expect(jsonData).to.have.property('eventgrid_note');",
+                  "        console.log('✅ Blob deleted successfully - EventGrid should trigger');",
+                  "    } else if (pm.response.code === 404) {",
+                  "        pm.expect(jsonData).to.have.property('error', 'Blob not found');",
+                  "        console.log('ℹ️ Blob not found - may have been already deleted');",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test(\"EventGrid note present on success\", function () {",
+                  "    if (pm.response.code === 200) {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.eventgrid_note).to.include('EventGrid');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Set default test values if not already set",
+                  "if (!pm.collectionVariables.get('test_container')) {",
+                  "    pm.collectionVariables.set('test_container', 'contract-policies');",
+                  "}",
+                  "",
+                  "if (!pm.collectionVariables.get('test_blob_name')) {",
+                  "    pm.collectionVariables.set('test_blob_name', 'eventgrid-test-file.txt');",
+                  "}",
+                  "",
+                  "// Add function key header if in Azure environment",
+                  "const baseUrl = pm.collectionVariables.get('base_url');",
+                  "const functionKey = pm.collectionVariables.get('function_key');",
+                  "",
+                  "if (baseUrl && baseUrl.includes('azurewebsites.net') && functionKey) {",
+                  "    pm.request.headers.add({",
+                  "        key: 'x-functions-key',",
+                  "        value: functionKey",
+                  "    });",
+                  "    console.log('🔑 Added function key for Azure deployment');",
+                  "} else if (baseUrl && baseUrl.includes('localhost')) {",
+                  "    console.log('🏠 Using local development - no function key needed');",
+                  "} else {",
+                  "    console.log('⚠️ Check base_url and function_key variables');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/storage/delete?container={{test_container}}&blob_name={{test_blob_name}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "storage",
+                "delete"
+              ],
+              "query": [
+                {
+                  "key": "container",
+                  "value": "{{test_container}}",
+                  "description": "Container name (uploads or contract-policies)"
+                },
+                {
+                  "key": "blob_name",
+                  "value": "{{test_blob_name}}",
+                  "description": "Name of the blob to delete"
+                }
+              ]
+            },
+            "description": "Delete a blob file from Azure Storage using query parameters. This will trigger EventGrid blob deletion events if configured.\n\n**Usage:**\n1. Set test_container variable (uploads or contract-policies)\n2. Set test_blob_name variable to file you want to delete\n3. Run request\n4. Check EventGrid logs for HandleBlobDeletion function execution\n\n**EventGrid Testing:**\nThis endpoint is specifically designed to test EventGrid blob deletion workflows. When a blob is deleted, it should automatically trigger the HandleBlobDeletion Azure Function which cleans up corresponding search index entries."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Blob File (JSON Body)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 or 404\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has required fields\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    ",
+                  "    if (pm.response.code === 200) {",
+                  "        pm.expect(jsonData).to.have.property('status', 'success');",
+                  "        pm.expect(jsonData).to.have.property('container');",
+                  "        pm.expect(jsonData).to.have.property('blob_name');",
+                  "        pm.expect(jsonData).to.have.property('deleted_at');",
+                  "        pm.expect(jsonData).to.have.property('eventgrid_note');",
+                  "        console.log('✅ Blob deleted successfully via JSON - EventGrid should trigger');",
+                  "    } else if (pm.response.code === 404) {",
+                  "        pm.expect(jsonData).to.have.property('error', 'Blob not found');",
+                  "        console.log('ℹ️ Blob not found - may have been already deleted');",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test(\"EventGrid note present on success\", function () {",
+                  "    if (pm.response.code === 200) {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.eventgrid_note).to.include('EventGrid');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Set default test values if not already set",
+                  "if (!pm.collectionVariables.get('test_container')) {",
+                  "    pm.collectionVariables.set('test_container', 'contract-policies');",
+                  "}",
+                  "",
+                  "if (!pm.collectionVariables.get('test_blob_name')) {",
+                  "    pm.collectionVariables.set('test_blob_name', 'eventgrid-test-file.txt');",
+                  "}",
+                  "",
+                  "// Add function key header if in Azure environment",
+                  "const baseUrl = pm.collectionVariables.get('base_url');",
+                  "const functionKey = pm.collectionVariables.get('function_key');",
+                  "",
+                  "if (baseUrl && baseUrl.includes('azurewebsites.net') && functionKey) {",
+                  "    pm.request.headers.add({",
+                  "        key: 'x-functions-key',",
+                  "        value: functionKey",
+                  "    });",
+                  "    console.log('🔑 Added function key for Azure deployment');",
+                  "} else if (baseUrl && baseUrl.includes('localhost')) {",
+                  "    console.log('🏠 Using local development - no function key needed');",
+                  "} else {",
+                  "    console.log('⚠️ Check base_url and function_key variables');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"container\": \"{{test_container}}\",\n  \"blob_name\": \"{{test_blob_name}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/storage/delete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "storage",
+                "delete"
+              ]
+            },
+            "description": "Delete a blob file from Azure Storage using JSON body. This will trigger EventGrid blob deletion events if configured.\n\n**Usage:**\n1. Set test_container variable (uploads or contract-policies)\n2. Set test_blob_name variable to file you want to delete\n3. Run request with JSON body\n4. Check EventGrid logs for HandleBlobDeletion function execution\n\n**JSON Body Format:**\n```json\n{\n  \"container\": \"contract-policies\",\n  \"blob_name\": \"test-file.txt\"\n}\n```\n\n**EventGrid Testing:**\nThis endpoint is specifically designed to test EventGrid blob deletion workflows. When a blob is deleted, it should automatically trigger the HandleBlobDeletion Azure Function which cleans up corresponding search index entries."
           },
           "response": []
         }

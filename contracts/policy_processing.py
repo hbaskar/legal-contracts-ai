@@ -276,17 +276,14 @@ async def process_policy_document(
     for i, clause in enumerate(clauses):
         try:
             logger.info(f"🧠 Analyzing clause {i+1}/{len(clauses)}...")
-            
             # Extract structured data using OpenAI
             structured = analyze_policy_with_openai(clause)
-            
             # Generate embedding for the instruction text
             try:
                 embedding = generate_text_embedding(structured.instruction)
             except Exception as e:
                 logger.warning(f"Failed to generate embedding for clause {i+1}: {e}")
                 embedding = None
-            
             # Save policy clause chunk to local database if available
             chunk_id = None
             if db_mgr and file_id:
@@ -302,13 +299,12 @@ async def process_policy_document(
                     )
                     logger.debug(f"💾 Saved policy clause {i+1} to database with ID: {chunk_id}")
                     chunk_id_mapping[successful_analyses] = chunk_id
-                    
                 except Exception as e:
                     logger.warning(f"Failed to save policy clause {i+1} to database: {e}")
-            
             # Prepare policy record for indexing (matches policy index schema)
             policy_record = {
                 "id": str(uuid.uuid4()),
+                "InstructionId": i + 1,
                 "PolicyId": policy_id,
                 "filename": filename,
                 "title": structured.title,
@@ -322,12 +318,9 @@ async def process_policy_document(
                 "language": "English",  # Could be detected automatically
                 "original_text": clause
             }
-            
             processed_policies.append(policy_record)
             successful_analyses += 1
-            
             logger.info(f"✅ Successfully analyzed clause {i+1}: {structured.title}")
-            
         except Exception as e:
             logger.error(f"❌ Error processing clause {i+1}: {str(e)}")
             continue

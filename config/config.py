@@ -90,7 +90,9 @@ def log_config_summary():
     config_obj = Config()
     
     logger.info(f"Database Type: {config_obj.DATABASE_TYPE}")
-    logger.info(f"Storage Container: {config_obj.AZURE_STORAGE_CONTAINER_NAME}")
+    logger.info(f"Contracts Container: {config_obj.AZURE_CONTRACTS_CONTAINER}")
+    logger.info(f"Reconstruct Contracts Container: {config_obj.AZURE_CONTRACTS_RECONSTRUCT_CONTAINER}")
+    logger.info(f"Policies Container: {config_obj.AZURE_CONTRACTS_POLICIES_CONTAINER}")
     logger.info(f"OpenAI Endpoint: {config_obj.AZURE_OPENAI_ENDPOINT}")
     logger.info(f"Search Endpoint: {config_obj.AZURE_SEARCH_ENDPOINT}")
     logger.info(f"Functions Runtime: {config_obj.FUNCTIONS_WORKER_RUNTIME}")
@@ -111,7 +113,9 @@ class Config:
     
     # Azure Storage Configuration
     AZURE_STORAGE_CONNECTION_STRING: str = os.getenv('AZURE_STORAGE_CONNECTION_STRING', '')
-    AZURE_STORAGE_CONTAINER_NAME: str = os.getenv('AZURE_STORAGE_CONTAINER_NAME', 'uploads')
+    AZURE_CONTRACTS_CONTAINER: str = os.getenv('AZURE_CONTRACTS_CONTAINER', 'contracts')
+    AZURE_CONTRACTS_RECONSTRUCT_CONTAINER = os.getenv('AZURE_CONTRACTS_RECONSTRUCT_CONTAINER', 'contracts-recreate')
+    AZURE_CONTRACTS_POLICIES_CONTAINER: str = os.getenv('AZURE_CONTRACTS_POLICIES_CONTAINER', 'contract-policies')
     AZURE_STORAGE_ACCOUNT_URL: Optional[str] = os.getenv('AZURE_STORAGE_ACCOUNT_URL')
     
     # Database Configuration - using your actual env variable names
@@ -279,9 +283,12 @@ class Config:
         if not cls.AZURE_STORAGE_CONNECTION_STRING:
             errors.append("AZURE_STORAGE_CONNECTION_STRING must be configured")
         
-        # Check container name
-        if not cls.AZURE_STORAGE_CONTAINER_NAME:
-            errors.append("AZURE_STORAGE_CONTAINER cannot be empty")
+        # Check container names
+        if not cls.AZURE_CONTRACTS_CONTAINER:
+            errors.append("AZURE_CONTRACTS_CONTAINER cannot be empty")
+        
+        if not cls.AZURE_CONTRACTS_POLICIES_CONTAINER:
+            errors.append("AZURE_CONTRACTS_POLICIES_CONTAINER cannot be empty")
         
         if errors:
             for error in errors:
@@ -295,7 +302,8 @@ class Config:
         """Get current environment configuration info"""
         return {
             "database_type": cls().DATABASE_TYPE,
-            "storage_container": cls.AZURE_STORAGE_CONTAINER_NAME,
+            "contracts_container": cls.AZURE_CONTRACTS_CONTAINER,
+            "policies_container": cls.AZURE_CONTRACTS_POLICIES_CONTAINER,
             "max_file_size_mb": cls.MAX_FILE_SIZE_MB,
             "default_sas_expiry_hours": cls.DEFAULT_SAS_EXPIRY_HOURS,
             "default_chunking_method": cls().DEFAULT_CHUNKING_METHOD,
@@ -324,5 +332,7 @@ if not hasattr(config, '_logged'):
     elif config.DATABASE_TYPE == 'azuresql':
         logging.info(f"Using Azure SQL database: {config.AZURE_SQL_SERVER}/{config.AZURE_SQL_DATABASE}")
     
-    logging.info(f"Storage container: {config.AZURE_STORAGE_CONTAINER_NAME}")
+    logging.info(f"Contracts container: {config.AZURE_CONTRACTS_CONTAINER}")
+    logging.info(f"Reconstruct Contracts container: {config.AZURE_CONTRACTS_RECONSTRUCT_CONTAINER}")
+    logging.info(f"Policies container: {config.AZURE_CONTRACTS_POLICIES_CONTAINER}")
     config._logged = True

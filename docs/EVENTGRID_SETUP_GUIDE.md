@@ -19,22 +19,25 @@ func azure functionapp publish <your-function-app-name>
 
 ## Step 2: Configure EventGrid Subscription via Azure Portal
 
-### 2.1 Navigate to Storage Account
+### 2.1 Create System Topic First
 1. Open [Azure Portal](https://portal.azure.com)
-2. Navigate to your storage account: `ggcorestorageacc`
-3. In the left menu, click **Events**
+2. Search for "Event Grid System Topics"
+3. Click **+ Create**
+4. Fill in:
+   - **Name**: `ggcorestorageacc-blob-events`
+   - **Resource Group**: `gg-core-rsg` (same as storage account)
+   - **Topic Type**: `Storage Accounts`
+   - **Source Resource**: Select your storage account `ggcorestorageacc`
+   - **Location**: `West US 2` (same as storage account)
 
 ### 2.2 Create Event Subscription
-1. Click **+ Event Subscription**
-2. Fill in the following details:
+1. After system topic is created, click on it
+2. Click **+ Event Subscription**
+3. Fill in the following details:
 
 **Basic Settings:**
 - **Name**: `blob-deletion-handler`
 - **Event Schema**: `Event Grid Schema`
-
-**Topic Details:**
-- **Topic Type**: `Storage Accounts`
-- **Source Resource**: Should auto-populate with your storage account
 
 **Event Types:**
 - **Filter to Event Types**: Uncheck "Subscribe to all event types"
@@ -44,8 +47,8 @@ func azure functionapp publish <your-function-app-name>
 - **Endpoint Type**: `Azure Function`
 - **Endpoint**: Click "Select an endpoint"
   - **Subscription**: Your Azure subscription
-  - **Resource Group**: Your function app's resource group
-  - **Function App**: Your deployed function app name
+  - **Resource Group**: `gg-ai-rsg03` (where your function app is)
+  - **Function App**: `aifnc`
   - **Function**: `HandleBlobDeletion`
 
 ### 2.3 Advanced Filters (Optional but Recommended)
@@ -63,25 +66,34 @@ This ensures only deletions from our monitored containers trigger the function.
 
 ## Step 3: Alternative - Azure CLI Configuration
 
-If you prefer command line, use this Azure CLI command:
+If you prefer command line, use these Azure CLI commands:
 
 ```bash
 # Set variables
-SUBSCRIPTION_ID="your-subscription-id"
-RESOURCE_GROUP="your-resource-group"
+SUBSCRIPTION_ID="293c28b4-b065-4681-b0bd-a1ae1ac0815a"
+STORAGE_RESOURCE_GROUP="gg-core-rsg"
+FUNCTION_RESOURCE_GROUP="gg-ai-rsg03"
 STORAGE_ACCOUNT="ggcorestorageacc"
-FUNCTION_APP="your-function-app-name"
+FUNCTION_APP="aifnc"
 FUNCTION_NAME="HandleBlobDeletion"
+LOCATION="westus2"
 
-# Create EventGrid subscription
-az eventgrid event-subscription create \
-  --name blob-deletion-handler \
-  --source-resource-id "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Storage/storageAccounts/$STORAGE_ACCOUNT" \
-  --endpoint-type azurefunction \
-  --endpoint "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Web/sites/$FUNCTION_APP/functions/$FUNCTION_NAME" \
-  --included-event-types Microsoft.Storage.BlobDeleted \
-  --subject-begins-with "/blobServices/default/containers/contract-policies/" \
-  --subject-begins-with "/blobServices/default/containers/uploads/"
+# Create EventGrid system topic for storage account
+az eventgrid system-topic create \
+  --name "ggcorestorageacc-blob-events" \
+  --resource-group "$STORAGE_RESOURCE_GROUP" \
+  --location "$LOCATION" \
+  --source "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$STORAGE_RESOURCE_GROUP/providers/Microsoft.Storage/storageAccounts/$STORAGE_ACCOUNT" \
+  --topic-type "Microsoft.Storage.StorageAccounts"
+
+# Create event subscription for blob deletion
+az eventgrid system-topic event-subscription create \
+  --name "blob-deletion-handler" \
+  --system-topic-name "ggcorestorageacc-blob-events" \
+  --resource-group "$STORAGE_RESOURCE_GROUP" \
+  --endpoint-type "azurefunction" \
+  --endpoint "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$FUNCTION_RESOURCE_GROUP/providers/Microsoft.Web/sites/$FUNCTION_APP/functions/$FUNCTION_NAME" \
+  --included-event-types "Microsoft.Storage.BlobDeleted"
 ```
 
 ## Step 4: Alternative - PowerShell Configuration

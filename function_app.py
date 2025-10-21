@@ -1,3 +1,13 @@
+# Helper function for storage manager
+async def get_storage_manager():
+    from contracts.storage import BlobStorageManager
+    from config.config import config
+    storage_mgr = BlobStorageManager(
+        connection_string=config.AZURE_STORAGE_CONNECTION_STRING,
+        container_name=config.AZURE_CONTRACTS_CONTAINER
+    )
+    await storage_mgr.initialize()
+    return storage_mgr
 """
 Azure Functions App for File Upload Service
 
@@ -20,10 +30,10 @@ Project Structure:
   - storage.py: Blob storage operations layer
 """
 
+import os
 import azure.functions as func
 import logging
 import json
-import os
 from datetime import datetime, UTC
 from typing import Optional
 import asyncio
@@ -33,7 +43,6 @@ from config.config import config
 from config.database import DatabaseManager
 from contracts.storage import BlobStorageManager
 from contracts.models import FileMetadata, UploadResponse
-
 
 # Initialize the Function App with v2 programming model
 app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
@@ -62,30 +71,13 @@ async def get_db_manager() -> DatabaseManager:
         await db_manager.initialize()
     return db_manager
 
-
-async def get_storage_manager() -> BlobStorageManager:
-    """Get or initialize storage manager"""
-    global storage_manager
-    if storage_manager is None:
-        storage_manager = BlobStorageManager()
-        await storage_manager.ensure_container_exists()
-    return storage_manager
-
-
+# Upload file endpoint (fix indentation and structure)
 @app.function_name(name="UploadFile")
-@app.route(route="upload", methods=["POST"])
+@app.route(route="files/upload", methods=["POST"])
 async def upload_file(req: func.HttpRequest) -> func.HttpResponse:
-    """
-    Upload file endpoint
-    
-    Accepts multipart form data with file upload
-    Returns JSON response with upload status and file metadata
-    """
     try:
-        logger.info("Processing file upload request")
-        
-        # Parse multipart form data
-        if not req.files:
+        # Check if file is present in request
+        if not req.files or 'file' not in req.files:
             return func.HttpResponse(
                 json.dumps({
                     "success": False,
@@ -95,8 +87,6 @@ async def upload_file(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=400,
                 mimetype="application/json"
             )
-        
-        # Get the uploaded file
         file = req.files.get('file')
         if not file:
             return func.HttpResponse(
@@ -108,8 +98,6 @@ async def upload_file(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=400,
                 mimetype="application/json"
             )
-        
-        # Validate file
         if not file.filename:
             return func.HttpResponse(
                 json.dumps({
@@ -120,12 +108,20 @@ async def upload_file(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=400,
                 mimetype="application/json"
             )
-        
-        # Read file content
+        container_param = req.form.get('container', 'contracts')
+        allowed_containers = [config.AZURE_CONTRACTS_CONTAINER, config.AZURE_CONTRACTS_POLICIES_CONTAINER]
+        if container_param not in allowed_containers:
+            return func.HttpResponse(
+                json.dumps({
+                    "success": False,
+                    "message": f"Invalid container. Allowed containers: {', '.join(allowed_containers)}",
+                    "error_details": f"Container '{container_param}' is not supported"
+                }),
+                status_code=400,
+                mimetype="application/json"
+            )
         file_content = file.read()
         file_size = len(file_content)
-        
-        # Validate file size using configuration
         max_file_size = config.MAX_FILE_SIZE_MB * 1024 * 1024
         if file_size > max_file_size:
             return func.HttpResponse(
@@ -134,10 +130,9 @@ async def upload_file(req: func.HttpRequest) -> func.HttpResponse:
                     "message": f"File too large. Maximum size is {config.MAX_FILE_SIZE_MB}MB",
                     "error_details": f"File size: {file_size} bytes"
                 }),
-                status_code=413,
+                status_code=400,
                 mimetype="application/json"
             )
-        
         if file_size == 0:
             return func.HttpResponse(
                 json.dumps({
@@ -148,70 +143,51 @@ async def upload_file(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=400,
                 mimetype="application/json"
             )
-        
-        # Get managers
         storage_mgr = await get_storage_manager()
         db_mgr = await get_db_manager()
-        
-        # Upload to blob storage
         blob_url, blob_name = await storage_mgr.upload_file(
             file_content,
             file.filename,
             file.content_type or 'application/octet-stream'
         )
-        
-        # Calculate checksum
         checksum = storage_mgr.calculate_file_hash(file_content)
-        
-        # Create metadata object
         metadata = FileMetadata(
             filename=blob_name,
             original_filename=file.filename,
             file_size=file_size,
             content_type=file.content_type or 'application/octet-stream',
             blob_url=blob_url,
-            container_name=storage_mgr.container_name,
+            container_name=container_param,
             upload_timestamp=datetime.now(UTC),
             checksum=checksum,
-            user_id=req.headers.get('X-User-ID')  # Optional user identification
+            user_id=req.headers.get('X-User-ID')
         )
-        
-        # Save metadata to database
         record_id = await db_mgr.save_file_metadata(metadata)
         metadata.id = record_id
-        
-        # Create response
         response = UploadResponse(
             success=True,
             message="File uploaded successfully",
             file_metadata=metadata
         )
-        
         logger.info(f"Successfully uploaded file: {file.filename} (ID: {record_id})")
-        
-        # Return the file metadata with additional response fields
         response_data = metadata.to_dict()
         response_data.update({
             "success": response.success,
             "message": response.message,
-            "file_id": record_id  # Explicit file_id for backwards compatibility
+            "file_id": record_id
         })
-        
         return func.HttpResponse(
             json.dumps(response_data),
             status_code=200,
             mimetype="application/json"
         )
-        
     except Exception as e:
         logger.error(f"Error uploading file: {str(e)}", exc_info=True)
-        
         error_response = UploadResponse(
             success=False,
             message="Failed to upload file",
             error_details=str(e)
         )
-        
         return func.HttpResponse(
             json.dumps({
                 "success": error_response.success,
@@ -226,11 +202,7 @@ async def upload_file(req: func.HttpRequest) -> func.HttpResponse:
 @app.function_name(name="GetFileInfo")
 @app.route(route="files/{file_id}", methods=["GET"])
 async def get_file_info(req: func.HttpRequest) -> func.HttpResponse:
-    """
-    Get file information endpoint
-    
-    Returns file metadata and optionally generates a secure download URL
-    """
+
     try:
         file_id = req.route_params.get('file_id')
         if not file_id:
@@ -317,11 +289,7 @@ async def get_file_info(req: func.HttpRequest) -> func.HttpResponse:
 @app.function_name(name="HealthCheck")
 @app.route(route="health", auth_level=func.AuthLevel.ANONYMOUS, methods=["GET"])
 async def health_check(req: func.HttpRequest) -> func.HttpResponse:
-    """
-    Health check endpoint
-    
-    Returns the health status of the service and its dependencies
-    """
+
     try:
         health_status = {
             "status": "healthy",
@@ -343,33 +311,14 @@ async def health_check(req: func.HttpRequest) -> func.HttpResponse:
                 "status": "unhealthy",
                 "error": str(e)
             }
-            health_status["status"] = "degraded"
-        
-        # Check blob storage connectivity
-        try:
-            storage_mgr = await get_storage_manager()
-            health_status["checks"]["blob_storage"] = {
-                "status": "healthy",
-                "container": storage_mgr.container_name
-            }
-        except Exception as e:
-            health_status["checks"]["blob_storage"] = {
-                "status": "unhealthy",
-                "error": str(e)
-            }
-            health_status["status"] = "degraded"
-        
         status_code = 200 if health_status["status"] == "healthy" else 503
-        
         return func.HttpResponse(
             json.dumps(health_status),
             status_code=status_code,
             mimetype="application/json"
         )
-        
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}")
-        
         return func.HttpResponse(
             json.dumps({
                 "status": "unhealthy",
@@ -386,14 +335,11 @@ async def health_check(req: func.HttpRequest) -> func.HttpResponse:
 @app.function_name(name="ProcessUploadedDocument")
 @app.blob_trigger(
     arg_name="myblob",
-    path="uploads/{name}",
+    path="contracts/{name}",
     connection="AZURE_STORAGE_CONNECTION_STRING"
 )
 async def process_uploaded_document(myblob: func.InputStream) -> None:
-    """
-    Automatically process documents when uploaded to blob storage
-    Uses AI services to extract content, chunk intelligently, and index to Azure Search
-    """
+
     import tempfile
     import os
     
@@ -1615,11 +1561,12 @@ async def delete_specific_document(req: func.HttpRequest) -> func.HttpResponse:
     
     Returns JSON with deletion results
     """
+
     try:
         # Get query parameters
         document_id = req.params.get('document_id')
         filename = req.params.get('filename')
-        
+
         # Check for batch deletion in request body
         document_ids = None
         try:
@@ -1627,27 +1574,11 @@ async def delete_specific_document(req: func.HttpRequest) -> func.HttpResponse:
             if req_body and 'document_ids' in req_body:
                 document_ids = req_body['document_ids']
         except Exception:
-            pass  # No JSON body is fine
-        
-        if not document_id and not filename and not document_ids:
-            return func.HttpResponse(
-                json.dumps({
-                    "status": "error",
-                    "message": "Either 'document_id', 'filename' query parameter, or 'document_ids' in request body is required",
-                    "usage": {
-                        "single_document": "DELETE /api/search/delete/document?document_id=xyz",
-                        "by_filename": "DELETE /api/search/delete/document?filename=file.pdf",
-                        "batch_deletion": "DELETE /api/search/delete/document with JSON body: {'document_ids': ['id1', 'id2']}"
-                    },
-                    "timestamp": datetime.now(UTC).isoformat()
-                }),
-                status_code=400,
-                mimetype="application/json"
-            )
-        
+            pass
+
         # Import the deletion functions
         from contracts.ai_services import delete_document_by_id, delete_document_from_index, delete_multiple_documents_by_ids
-        
+
         # Perform the appropriate deletion
         if document_ids:
             logger.info(f"🗑️ Batch deleting {len(document_ids)} documents from Azure Search index")
@@ -1655,10 +1586,19 @@ async def delete_specific_document(req: func.HttpRequest) -> func.HttpResponse:
         elif document_id:
             logger.info(f"🗑️ Deleting document '{document_id}' from Azure Search index")
             result = delete_document_by_id(document_id)
-        else:  # filename
+        elif filename:
             logger.info(f"🗑️ Deleting all chunks for filename '{filename}' from Azure Search index")
             result = delete_document_from_index(filename)
-        
+        else:
+            return func.HttpResponse(
+                json.dumps({
+                    "status": "error",
+                    "message": "Either 'document_id', 'filename', or 'document_ids' is required"
+                }),
+                status_code=400,
+                mimetype="application/json"
+            )
+
         # Determine HTTP status code based on result
         if result["status"] == "success":
             status_code = 200
@@ -1666,24 +1606,23 @@ async def delete_specific_document(req: func.HttpRequest) -> func.HttpResponse:
             status_code = 404
         else:
             status_code = 500
-        
+
         # Prepare response data
         response_data = {
             **result,
             "timestamp": datetime.now(UTC).isoformat()
         }
-        
+
         logger.info(f"✅ Deletion operation completed: {result['message']}")
-        
+
         return func.HttpResponse(
             json.dumps(response_data),
             status_code=status_code,
             mimetype="application/json"
         )
-        
+
     except Exception as e:
         logger.error(f"❌ Failed to delete documents from Azure Search: {str(e)}", exc_info=True)
-        
         return func.HttpResponse(
             json.dumps({
                 "status": "error",
@@ -2577,6 +2516,8 @@ async def handle_blob_deletion(event: func.EventGridEvent) -> None:
     Handle blob deletion events from EventGrid to automatically clean up corresponding Azure Search index entries
     Triggers when documents or policies are deleted from blob storage containers
     """
+    from config.config import config
+    
     try:
         event_data = event.get_json()
         event_type = event.event_type
@@ -2595,10 +2536,10 @@ async def handle_blob_deletion(event: func.EventGridEvent) -> None:
         
         # Determine which container the blob was deleted from
         container_name = None
-        if '/blobs/uploads/' in subject:
-            container_name = 'uploads'
-        elif '/blobs/contract-policies/' in subject:
-            container_name = 'contract-policies'
+        if f'/blobs/{config.AZURE_CONTRACTS_CONTAINER}/' in subject:
+            container_name = config.AZURE_CONTRACTS_CONTAINER
+        elif f'/blobs/{config.AZURE_CONTRACTS_POLICIES_CONTAINER}/' in subject:
+            container_name = config.AZURE_CONTRACTS_POLICIES_CONTAINER
         else:
             logger.info(f"⏭️ Blob deletion not in monitored containers: {subject}")
             return
@@ -2615,12 +2556,12 @@ async def handle_blob_deletion(event: func.EventGridEvent) -> None:
         
         # Delete corresponding documents from Azure Search index based on filename
         try:
-            if container_name == 'uploads':
+            if container_name == config.AZURE_CONTRACTS_CONTAINER:
                 # Delete from main document index
                 deletion_result = delete_document_from_index(blob_name)
                 logger.info(f"📄 Document index cleanup result: {deletion_result}")
                 
-            elif container_name == 'contract-policies':
+            elif container_name == config.AZURE_CONTRACTS_POLICIES_CONTAINER:
                 # Delete from policy index - we need to handle this differently
                 # Policy documents may have multiple clauses/records per file
                 try:
@@ -2683,3 +2624,291 @@ async def handle_blob_deletion(event: func.EventGridEvent) -> None:
     except Exception as e:
         logger.error(f"❌ EventGrid blob deletion handler error: {str(e)}")
         # Don't re-raise to avoid EventGrid retries
+
+
+@app.function_name(name="DeleteBlobFile")
+@app.route(route="storage/delete", methods=["DELETE"])
+async def delete_blob_file(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Delete a file from Azure Blob Storage container
+    Useful for testing EventGrid blob deletion events
+    """
+    from config.config import config
+    
+    logger.info('🗑️ Blob deletion function triggered')
+    
+    try:
+        # Get parameters from query string or JSON body
+        container_name = req.params.get('container')
+        blob_name = req.params.get('blob_name')
+        
+        if not container_name or not blob_name:
+            # Try to get from JSON body
+            try:
+                req_body = req.get_json()
+                container_name = req_body.get('container') if req_body else None
+                blob_name = req_body.get('blob_name') if req_body else None
+            except:
+                pass
+        
+        if not container_name or not blob_name:
+            return func.HttpResponse(
+                json.dumps({
+                    "error": "Missing required parameters",
+                    "message": "Both 'container' and 'blob_name' parameters are required",
+                    "usage": {
+                        "query_string": "DELETE /api/storage/delete?container=uploads&blob_name=file.txt",
+                        "json_body": "DELETE /api/storage/delete with JSON: {'container': 'uploads', 'blob_name': 'file.txt'}"
+                    }
+                }),
+                mimetype="application/json",
+                status_code=400
+            )
+        
+        # Validate container names
+        allowed_containers = [config.AZURE_CONTRACTS_CONTAINER, config.AZURE_CONTRACTS_POLICIES_CONTAINER]
+        if container_name not in allowed_containers:
+            return func.HttpResponse(
+                json.dumps({
+                    "error": "Invalid container",
+                    "message": f"Container must be one of: {allowed_containers}",
+                    "provided": container_name
+                }),
+                mimetype="application/json",
+                status_code=400
+            )
+        
+        # Import Azure Storage components
+        from azure.storage.blob import BlobServiceClient
+        from config.config import config
+        
+        # Initialize blob service client
+        blob_service_client = BlobServiceClient.from_connection_string(
+            config.AZURE_STORAGE_CONNECTION_STRING
+        )
+        
+        # Get blob client
+        blob_client = blob_service_client.get_blob_client(
+            container=container_name,
+            blob=blob_name
+        )
+        
+        # Check if blob exists
+        try:
+            blob_properties = blob_client.get_blob_properties()
+            logger.info(f"📄 Found blob: {blob_name} in {container_name} (Size: {blob_properties.size} bytes)")
+        except Exception as e:
+            if "BlobNotFound" in str(e):
+                return func.HttpResponse(
+                    json.dumps({
+                        "error": "Blob not found",
+                        "message": f"Blob '{blob_name}' not found in container '{container_name}'",
+                        "container": container_name,
+                        "blob_name": blob_name
+                    }),
+                    mimetype="application/json",
+                    status_code=404
+                )
+            else:
+                raise e
+        
+        # Delete the blob
+        delete_result = blob_client.delete_blob()
+        
+        logger.info(f"✅ Successfully deleted blob: {blob_name} from {container_name}")
+        
+        # For local testing, also call the index deletion logic directly
+        # since EventGrid only works with Azure-deployed functions
+        index_deletion_result = None
+        try:
+            from contracts.ai_services import delete_document_from_index
+            
+            if container_name == config.AZURE_CONTRACTS_CONTAINER:
+                # Delete from main document index
+                index_deletion_result = delete_document_from_index(blob_name)
+                logger.info(f"📄 Local test - Document index cleanup result: {index_deletion_result}")
+                
+            elif container_name == config.AZURE_CONTRACTS_POLICIES_CONTAINER:
+                # Delete from policy index - we need to handle this differently
+                try:
+                    from contracts.ai_services import get_search_client
+                    from azure.search.documents import SearchClient
+                    from azure.core.credentials import AzureKeyCredential
+                    
+                    # Initialize policy search client
+                    policy_client = SearchClient(
+                        endpoint=config.AZURE_SEARCH_ENDPOINT,
+                        index_name=config.AZURE_SEARCH_POLICY_INDEX,
+                        credential=AzureKeyCredential(config.AZURE_SEARCH_KEY)
+                    )
+                    
+                    # Search for all policy records with this filename
+                    search_results = policy_client.search(
+                        search_text="*",
+                        filter=f"filename eq '{blob_name}'",
+                        select=["id", "PolicyId", "title"]
+                    )
+                    
+                    # Collect document IDs to delete
+                    documents_to_delete = []
+                    for result in search_results:
+                        documents_to_delete.append({"@search.action": "delete", "id": result["id"]})
+                    
+                    if documents_to_delete:
+                        # Execute batch deletion
+                        upload_result = policy_client.upload_documents(documents_to_delete)
+                        successful_deletes = sum(1 for r in upload_result if r.succeeded)
+                        index_deletion_result = f"Deleted {successful_deletes} policy records for {blob_name}"
+                        logger.info(f"🗑️ Local test - Policy index cleanup: {index_deletion_result}")
+                    else:
+                        index_deletion_result = f"No policy records found for {blob_name}"
+                        logger.info(f"ℹ️ Local test - {index_deletion_result}")
+                        
+                except Exception as policy_delete_error:
+                    index_deletion_result = f"Error deleting policy records: {str(policy_delete_error)}"
+                    logger.error(f"❌ Local test - Policy deletion error: {policy_delete_error}")
+                    
+        except ImportError as e:
+            index_deletion_result = f"Index deletion services not available: {e}"
+            logger.warning(f"⚠️ Local test - {index_deletion_result}")
+        except Exception as e:
+            index_deletion_result = f"Error during index cleanup: {str(e)}"
+            logger.error(f"❌ Local test - Index deletion error: {e}")
+        
+        return func.HttpResponse(
+            json.dumps({
+                "status": "success",
+                "message": f"Successfully deleted blob '{blob_name}' from container '{container_name}'",
+                "container": container_name,
+                "blob_name": blob_name,
+                "deleted_at": datetime.now(UTC).isoformat(),
+                "index_cleanup": index_deletion_result,
+                "eventgrid_note": "EventGrid blob deletion events only work with Azure-deployed functions. For local testing, index cleanup is performed directly.",
+                "deployment_note": "Deploy to Azure with 'func azure functionapp publish aifnc' to enable automatic EventGrid-triggered index cleanup"
+            }),
+            mimetype="application/json",
+            status_code=200
+        )
+        
+    except Exception as e:
+        logger.error(f"❌ Error deleting blob: {str(e)}", exc_info=True)
+        
+        return func.HttpResponse(
+            json.dumps({
+                "status": "error",
+                "message": f"Failed to delete blob: {str(e)}",
+                "container": container_name if 'container_name' in locals() else None,
+                "blob_name": blob_name if 'blob_name' in locals() else None,
+                "timestamp": datetime.now(UTC).isoformat()
+            }),
+            mimetype="application/json",
+            status_code=500
+        )
+
+
+# Test endpoint for index cleanup (local testing only)
+@app.route(route="test/index/cleanup", auth_level=func.AuthLevel.FUNCTION)
+def test_index_cleanup(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Test endpoint to directly test index cleanup functionality without EventGrid
+    For local testing only - helps verify the index deletion logic works
+    """
+    from config.config import config
+    
+    try:
+        # Get parameters
+        filename = req.params.get('filename')
+        container = req.params.get('container', config.AZURE_CONTRACTS_CONTAINER)
+        
+        if not filename:
+            return func.HttpResponse(
+                json.dumps({
+                    "error": "Missing required parameter",
+                    "message": "Filename parameter is required",
+                    "usage": "GET /api/test/index/cleanup?filename=document.txt&container=uploads"
+                }),
+                mimetype="application/json",
+                status_code=400
+            )
+        
+        logger.info(f"🧪 Testing index cleanup for {filename} from {container}")
+        
+        # Test index deletion logic
+        index_deletion_result = None
+        try:
+            from contracts.ai_services import delete_document_from_index
+            
+            if container == config.AZURE_CONTRACTS_CONTAINER:
+                # Delete from main document index
+                index_deletion_result = delete_document_from_index(filename)
+                logger.info(f"📄 Test - Document index cleanup result: {index_deletion_result}")
+                
+            elif container == config.AZURE_CONTRACTS_POLICIES_CONTAINER:
+                # Delete from policy index
+                try:
+                    from contracts.ai_services import get_search_client
+                    from azure.search.documents import SearchClient
+                    from azure.core.credentials import AzureKeyCredential
+                    
+                    # Initialize policy search client
+                    policy_client = SearchClient(
+                        endpoint=config.AZURE_SEARCH_ENDPOINT,
+                        index_name=config.AZURE_SEARCH_POLICY_INDEX,
+                        credential=AzureKeyCredential(config.AZURE_SEARCH_KEY)
+                    )
+                    
+                    # Search for all policy records with this filename
+                    search_results = policy_client.search(
+                        search_text="*",
+                        filter=f"filename eq '{filename}'",
+                        select=["id", "PolicyId", "title"]
+                    )
+                    
+                    # Collect document IDs to delete
+                    documents_to_delete = []
+                    for result in search_results:
+                        documents_to_delete.append({"@search.action": "delete", "id": result["id"]})
+                    
+                    if documents_to_delete:
+                        # Execute batch deletion
+                        upload_result = policy_client.upload_documents(documents_to_delete)
+                        successful_deletes = sum(1 for r in upload_result if r.succeeded)
+                        index_deletion_result = f"Deleted {successful_deletes} policy records for {filename}"
+                        logger.info(f"🗑️ Test - Policy index cleanup: {index_deletion_result}")
+                    else:
+                        index_deletion_result = f"No policy records found for {filename}"
+                        logger.info(f"ℹ️ Test - {index_deletion_result}")
+                        
+                except Exception as policy_delete_error:
+                    index_deletion_result = f"Error deleting policy records: {str(policy_delete_error)}"
+                    logger.error(f"❌ Test - Policy deletion error: {policy_delete_error}")
+                    
+        except ImportError as e:
+            index_deletion_result = f"Index deletion services not available: {e}"
+            logger.warning(f"⚠️ Test - {index_deletion_result}")
+        except Exception as e:
+            index_deletion_result = f"Error during index cleanup: {str(e)}"
+            logger.error(f"❌ Test - Index deletion error: {e}")
+        
+        return func.HttpResponse(
+            json.dumps({
+                "status": "success",
+                "message": "Index cleanup test completed",
+                "filename": filename,
+                "container": container,
+                "index_cleanup_result": index_deletion_result,
+                "note": "This is a test endpoint for local development. In production, EventGrid triggers automatic index cleanup when blobs are deleted."
+            }),
+            mimetype="application/json"
+        )
+        
+    except Exception as e:
+        logger.error(f"❌ Test index cleanup error: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({
+                "error": "Test failed",
+                "message": str(e)
+            }),
+            mimetype="application/json",
+            status_code=500
+        )

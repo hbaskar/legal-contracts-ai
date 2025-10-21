@@ -13,8 +13,10 @@ from azure.search.documents.indexes.models import (
 # Import configuration
 from config.config import config
 
+
 # Configure logging
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 def create_document_index_if_not_exists(index_name: str = None) -> Dict:
     """
@@ -53,7 +55,7 @@ def create_document_index_if_not_exists(index_name: str = None) -> Dict:
         
         # Define index fields (based on legal-documents schema)
         fields = [
-            SimpleField(name="id", type=SearchFieldDataType.String, key=True),
+            SimpleField(name="id", type=SearchFieldDataType.String, key=True, sortable=True),
             SimpleField(name="ParagraphId", type=SearchFieldDataType.Int32, filterable=True, sortable=True),
             SearchableField(name="title", type=SearchFieldDataType.String, filterable=True),
             SearchableField(name="paragraph", type=SearchFieldDataType.String),
@@ -145,6 +147,7 @@ def create_policy_index_if_not_exists(index_name: str = None) -> Dict:
         # Define index fields for policy index (with vector search support)
         fields = [
             SimpleField(name="id", type=SearchFieldDataType.String, key=True, sortable=True),
+            SimpleField(name="InstructionId", type=SearchFieldDataType.Int32, filterable=True, sortable=True),
             SimpleField(name="PolicyId", type=SearchFieldDataType.String, filterable=True),
             SimpleField(name="filename", type=SearchFieldDataType.String, filterable=True),
             SearchableField(name="title", type=SearchFieldDataType.String),

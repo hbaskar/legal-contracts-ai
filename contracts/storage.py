@@ -15,10 +15,10 @@ from azure.core.exceptions import AzureError
 class BlobStorageManager:
     """Manages Azure Blob Storage operations"""
     
-    def __init__(self):
+    def __init__(self, container_name: str = None):
         from config.config import config
         self.storage_connection_string = config.AZURE_STORAGE_CONNECTION_STRING
-        self.container_name = config.AZURE_STORAGE_CONTAINER_NAME
+        self.container_name = container_name or config.AZURE_CONTRACTS_CONTAINER
         self.logger = logging.getLogger(__name__)
         
         # Initialize blob service client
